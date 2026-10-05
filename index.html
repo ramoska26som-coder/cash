@@ -172,6 +172,8 @@
   .pd-total{font-family:var(--font-mono);font-weight:700;font-size:14px;color:var(--warn);}
   .pd-lista{display:flex;flex-direction:column;gap:3px;}
   .pd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;padding:2px 0;}
+  .pd-item.pd-clickable{cursor:pointer;border-radius:6px;padding:4px 6px;margin:0 -6px;transition:background .12s;}
+  .pd-item.pd-clickable:hover{background:rgba(0,0,0,.05);}
   .pd-item .pd-desc{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pd-item .pd-desc small{color:var(--ink-faint);font-weight:600;}
   .pd-item .pd-monto{font-family:var(--font-mono);font-weight:600;color:var(--ink-soft);flex-shrink:0;}
@@ -1926,6 +1928,7 @@ function getPendientesList(){
     return m.tipo==="pendiente_banco" || m.esPendiente;
   }).map(function(m){
     return {
+      id: m.id,
       descripcion: m.descripcion||"(sin descripción)",
       origen: m.tipo==="pendiente_banco" ? "banco" : "caja",
       esExterno: !!m.esExterno,
@@ -2080,7 +2083,7 @@ function renderPendientesDetalle(total){
 
   function filas(items){
     return items.map(function(p){
-      return '<div class="pd-item">'+
+      return '<div class="pd-item pd-clickable" data-detalle="'+esc(String(p.id))+'" title="Ver detalle">'+
         '<span class="pd-desc">'+esc(p.descripcion)+' <small>('+p.origen+')</small></span>'+
         '<span class="pd-monto">'+fmt(p.monto)+'</span></div>';
     }).join("");
@@ -3037,6 +3040,17 @@ document.getElementById("historialGroups").addEventListener("click",function(e){
   var row=e.target.closest(".mov-clickable");
   if(row){ abrirDetalleMovimiento(row.getAttribute("data-detalle")); }
 });
+
+// Click en un efectivo pendiente del panel de detalle -> abre el detalle del movimiento
+(function(){
+  var pd=document.getElementById("pendientesDetalle");
+  if(pd){
+    pd.addEventListener("click",function(e){
+      var item=e.target.closest(".pd-clickable");
+      if(item){ abrirDetalleMovimiento(item.getAttribute("data-detalle")); }
+    });
+  }
+})();
 
 // Convierte un movimiento pendiente de caja en egreso normal (quita el flag)
 function pasarPendienteAEgreso(id){
