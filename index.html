@@ -1403,6 +1403,8 @@ var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 // Perfil/rol del usuario actual (se llena tras login)
 var usuarioActual = null;   // { id, nombre, email, rol }
+var esCajeroActual = false;      // true si está en caja_cajeros
+var puedeAutorizarActual = false; // admin O caja_cajeros.autoriza
 var _perfilesCatalogo = {}; // uuid -> nombre (para mostrar quién solicitó)
 function nombrePerfil(uuid){
   if(!uuid) return "—";
