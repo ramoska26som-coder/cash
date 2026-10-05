@@ -1041,9 +1041,10 @@
       <p class="ahint">Autorizadas por gerencia, listas para entregar. Al completar se registra el egreso en caja.</p>
       <div class="historial-header" style="margin-top:10px;">
         <div class="filtros">
-          <button class="filtro-btn active" data-sfiltro="autorizada">Por entregar</button>
-          <button class="filtro-btn" data-sfiltro="pendiente">Pendientes</button>
+          <button class="filtro-btn active" data-sfiltro="pendiente">Pendientes</button>
+          <button class="filtro-btn" data-sfiltro="autorizada">Por entregar</button>
           <button class="filtro-btn" data-sfiltro="completada">Entregadas</button>
+          <button class="filtro-btn" data-sfiltro="rechazada">Rechazadas</button>
           <button class="filtro-btn" data-sfiltro="todas">Todas</button>
         </div>
       </div>
@@ -1402,6 +1403,16 @@ var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 // Perfil/rol del usuario actual (se llena tras login)
 var usuarioActual = null;   // { id, nombre, email, rol }
+var _perfilesCatalogo = {}; // uuid -> nombre (para mostrar quién solicitó)
+function nombrePerfil(uuid){
+  if(!uuid) return "—";
+  return _perfilesCatalogo[uuid] || "Usuario";
+}
+function cargarCatalogoPerfiles(){
+  return sb.from("perfiles").select("id,nombre").then(function(r){
+    if(!r.error && r.data){ r.data.forEach(function(p){ _perfilesCatalogo[p.id] = p.nombre; }); }
+  }).catch(function(){});
+}
 var DENOMS = [500,200,100,50,20,10,5,2,1];
 
 // ---- Mapeo fila BD (snake) -> objeto frontend (camel, con denominaciones{}) ----
@@ -4287,6 +4298,10 @@ function iniciarSesionApp(){
     if(r.error) throw new Error("No se pudo cargar tu perfil: "+r.error.message);
     usuarioActual = r.data;
     if(!usuarioActual.activo){ throw new Error("Tu usuario está inactivo. Contacta al administrador."); }
+    // El cajero y la gerencia necesitan los nombres de quién solicita
+    if(usuarioActual.rol==="cajero" || usuarioActual.rol==="admin"){
+      return cargarCatalogoPerfiles().then(aplicarVistaPorRol);
+    }
     aplicarVistaPorRol();
   }).catch(function(err){
     // Si algo falla, cerrar sesión para no dejar estado inconsistente
@@ -4356,7 +4371,7 @@ function actualizarBadgeSolicitudes(){
   var rol = usuarioActual.rol;
   var n = 0;
   if(rol==="admin"){ n = state.solicitudes.filter(function(s){ return s.estado==="pendiente"; }).length; }
-  else if(rol==="cajero"){ n = state.solicitudes.filter(function(s){ return s.estado==="autorizada"; }).length; }
+  else if(rol==="cajero"){ n = state.solicitudes.filter(function(s){ return s.estado==="pendiente" || s.estado==="autorizada"; }).length; }
   if(n>0){ b.textContent=n; b.style.display="inline-flex"; } else { b.style.display="none"; }
 }
 
@@ -4497,7 +4512,7 @@ function abrirModalSolicitud(){
 // ================================================================
 // VISTA DEL CAJERO: bandeja de solicitudes + completar en caja
 // ================================================================
-var solicFiltroCajero = "autorizada";
+var solicFiltroCajero = "pendiente";
 var solicitudParaCompletar = null;
 
 function renderSolicitudesCajero(){
@@ -4515,23 +4530,36 @@ function renderSolicitudesCajero(){
   cont.innerHTML='<div class="solic-lista">'+lista.map(function(s){
     var fe=new Date(s.creado_en);
     var fstr=("0"+fe.getDate()).slice(-2)+"/"+("0"+(fe.getMonth()+1)).slice(-2)+" "+("0"+fe.getHours()).slice(-2)+":"+("0"+fe.getMinutes()).slice(-2);
-    var btnCompletar = (s.estado==="autorizada")
-      ? '<button class="btn btn-blue" data-completar="'+s.id+'">Entregar en caja</button>' : '';
+    var acciones = "";
+    if(s.estado==="pendiente"){
+      // El cajero (que también autoriza) puede autorizar o rechazar aquí mismo
+      acciones = '<button class="btn btn-blue" data-aut="'+s.id+'">Autorizar</button>'+
+                 '<button class="btn btn-danger" data-rec="'+s.id+'">Rechazar</button>';
+    } else if(s.estado==="autorizada"){
+      acciones = '<button class="btn btn-blue" data-completar="'+s.id+'">Entregar en caja</button>';
+    }
     return '<div class="solic-item">'+
              '<div class="solic-main">'+
                '<div class="solic-monto">'+fmt(s.monto)+'</div>'+
                '<div class="solic-desc">'+esc(s.descripcion||"(sin descripción)")+'</div>'+
                (s.beneficiario?'<div class="solic-meta">Para: '+esc(s.beneficiario)+'</div>':'')+
-               '<div class="solic-meta">'+fstr+'</div>'+
+               '<div class="solic-meta">Solicitó: '+esc(nombrePerfil(s.solicitado_por))+' · '+fstr+'</div>'+
+               (s.motivo_rechazo?'<div class="solic-meta" style="color:var(--egreso);">Motivo: '+esc(s.motivo_rechazo)+'</div>':'')+
              '</div>'+
              '<div class="solic-right">'+chipEstadoSolic(s.estado)+
-               (btnCompletar?'<div class="solic-acciones">'+btnCompletar+'</div>':'')+
+               (acciones?'<div class="solic-acciones">'+acciones+'</div>':'')+
              '</div>'+
            '</div>';
   }).join("")+'</div>';
 
   cont.querySelectorAll("[data-completar]").forEach(function(b){
     b.addEventListener("click", function(){ completarSolicitudEnCaja(b.getAttribute("data-completar")); });
+  });
+  cont.querySelectorAll("[data-aut]").forEach(function(b){
+    b.addEventListener("click", function(){ accionAutorizar(b.getAttribute("data-aut"), true); });
+  });
+  cont.querySelectorAll("[data-rec]").forEach(function(b){
+    b.addEventListener("click", function(){ accionAutorizar(b.getAttribute("data-rec"), false); });
   });
 }
 
