@@ -413,6 +413,12 @@
   .add-person-inline input:focus{outline:none;border-color:var(--blue);}
   .add-person-confirm{flex-shrink:0;border:none;background:var(--blue-dark);color:#fff;font-weight:600;font-size:13px;border-radius:8px;padding:0 14px;cursor:pointer;}
   .denom-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+  .cambio-tot-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--ink-soft);padding:6px 2px 2px;}
+  .cambio-tot-row .mono{font-family:var(--font-mono);font-weight:700;color:var(--ink);}
+  .cambio-aviso{font-size:13px;font-weight:600;text-align:center;padding:9px;border-radius:9px;margin-bottom:12px;}
+  .cambio-aviso.ok{background:var(--success-bg);color:var(--success);border:1px solid #BFE0CF;}
+  .cambio-aviso.bad{background:var(--warn-bg);color:var(--warn);border:1px solid #E8D9B0;}
+  .cambio-aviso.empty{display:none;}
   .denom-cell{border:1px solid var(--border);border-radius:8px;padding:7px 8px;background:var(--surface-2);}
   .denom-cell label{display:block;font-family:var(--font-mono);font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;}
   .denom-cell input{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px;
@@ -765,6 +771,7 @@
         <span class="inv-total-label">Total en billetes</span>
         <span class="inv-total-valor" id="invTotal">L 0.00</span>
       </div>
+      <button type="button" class="btn btn-ghost" id="hacerCambioBtn" style="width:100%;margin-top:14px;border-color:var(--blue);color:var(--blue);">↔ Hacer cambio de billetes</button>
     </div>
 
     <!-- Historial agrupado -->
@@ -1300,6 +1307,38 @@
       <button type="button" class="btn btn-ghost" id="detalleFirmarBtn" style="border-color:var(--blue);color:var(--blue);">Firmar</button>
       <button type="button" class="btn btn-blue" id="detalleEditarBtn">Editar</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal: cambio de billetes (interno, sale/entra) -->
+<div class="modal-overlay" id="cambioOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Hacer cambio de billetes</h2>
+      <button type="button" class="modal-close" id="cambioClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-subtitle" style="display:block;">Intercambia billetes sin mover el saldo: salen unos billetes y entran otros por el mismo monto. Solo cambia el inventario.</div>
+    <form id="cambioForm">
+      <div class="field">
+        <label>Billetes que <b>SALEN</b> de caja</label>
+        <div class="denom-grid" id="cambioSaleGrid"></div>
+        <div class="cambio-tot-row"><span>Total que sale</span><span class="mono" id="cambioSaleTotal">L 0.00</span></div>
+      </div>
+      <div class="field">
+        <label>Billetes que <b>ENTRAN</b> a caja</label>
+        <div class="denom-grid" id="cambioEntraGrid"></div>
+        <div class="cambio-tot-row"><span>Total que entra</span><span class="mono" id="cambioEntraTotal">L 0.00</span></div>
+      </div>
+      <div class="field">
+        <label for="cambioDesc">Descripción (opcional)</label>
+        <input type="text" id="cambioDesc" placeholder="p. ej. Cambio de L500 en billetes chicos" autocomplete="off">
+      </div>
+      <div id="cambioAviso" class="cambio-aviso"></div>
+      <div class="form-error" id="cambioError" style="display:none;"></div>
+      <button type="submit" class="btn btn-blue" id="cambioSubmit" style="width:100%;">Registrar cambio</button>
+    </form>
   </div>
 </div>
 
@@ -3225,6 +3264,140 @@ document.getElementById("detalleFirmarBtn").addEventListener("click",function(){
 document.getElementById("detallePasarEgresoBtn").addEventListener("click",function(){
   var id=detalleCurrentId; cerrarDetalle(); pasarPendienteAEgreso(id);
 });
+
+// ================================================================
+// Cambio de billetes (interno: sale / entra, sin mover el saldo)
+// ================================================================
+(function(){
+  var overlay=document.getElementById("cambioOverlay");
+  if(!overlay) return;
+  var saleGrid=document.getElementById("cambioSaleGrid");
+  var entraGrid=document.getElementById("cambioEntraGrid");
+
+  function construirGrid(grid, pref){
+    grid.innerHTML="";
+    DENOMINACIONES.forEach(function(v){
+      var cell=document.createElement("div"); cell.className="denom-cell";
+      cell.innerHTML='<label for="'+pref+v+'">L '+v+'</label>'+
+        '<input type="text" id="'+pref+v+'" inputmode="text" autocomplete="off" placeholder="0">';
+      grid.appendChild(cell);
+    });
+    grid.addEventListener("input", actualizarTotales);
+    grid.addEventListener("keydown", function(e){
+      if(!e.target.matches("input")) return;
+      if(e.key==="Enter"||e.key===" "||e.code==="Space"){
+        e.preventDefault(); resolverInputExpr(e.target); actualizarTotales();
+        var inputs=Array.prototype.slice.call(grid.querySelectorAll("input"));
+        var idx=inputs.indexOf(e.target);
+        if(idx>-1 && idx<inputs.length-1){ inputs[idx+1].focus(); inputs[idx+1].select(); } else { e.target.blur(); }
+      }
+    });
+    grid.addEventListener("blur", function(e){
+      if(e.target.matches("input")){ resolverInputExpr(e.target); actualizarTotales(); }
+    }, true);
+  }
+
+  function leerDenoms(pref){
+    var d={}, total=0;
+    DENOMINACIONES.forEach(function(v){
+      var el=document.getElementById(pref+v);
+      var n=el?evalExpr(el.value):0;
+      n=(n===null||isNaN(n))?0:Math.round(n);
+      if(n<0) n=0;
+      d[v]=n; total+=n*v;
+    });
+    return { denoms:d, total:round2(total) };
+  }
+
+  function actualizarTotales(){
+    var sale=leerDenoms("cs_"), entra=leerDenoms("ce_");
+    document.getElementById("cambioSaleTotal").textContent=fmt(sale.total);
+    document.getElementById("cambioEntraTotal").textContent=fmt(entra.total);
+    var aviso=document.getElementById("cambioAviso");
+    if(sale.total===0 && entra.total===0){
+      aviso.className="cambio-aviso empty"; aviso.textContent="";
+    } else if(Math.abs(sale.total-entra.total)<0.005){
+      aviso.className="cambio-aviso ok"; aviso.textContent="✓ Cuadra: "+fmt(sale.total)+" por "+fmt(entra.total);
+    } else {
+      aviso.className="cambio-aviso bad";
+      var dif=round2(sale.total-entra.total);
+      aviso.textContent="No cuadra · diferencia "+fmt(Math.abs(dif))+(dif>0?" (falta que entre)":" (falta que salga)");
+    }
+    return { sale:sale, entra:entra };
+  }
+
+  function abrir(){
+    saleGrid.innerHTML=""; entraGrid.innerHTML="";
+    construirGrid(saleGrid,"cs_"); construirGrid(entraGrid,"ce_");
+    document.getElementById("cambioDesc").value="";
+    document.getElementById("cambioError").style.display="none";
+    actualizarTotales();
+    overlay.classList.add("open");
+  }
+  function cerrar(){ overlay.classList.remove("open"); }
+
+  var btn=document.getElementById("hacerCambioBtn");
+  if(btn) btn.addEventListener("click", abrir);
+  document.getElementById("cambioClose").addEventListener("click", cerrar);
+  overlay.addEventListener("click", function(e){ if(e.target===overlay) cerrar(); });
+
+  document.getElementById("cambioForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var r=actualizarTotales();
+    var errEl=document.getElementById("cambioError");
+    errEl.style.display="none";
+    var sale=r.sale, entra=r.entra;
+
+    if(sale.total===0 || entra.total===0){
+      errEl.textContent="Indica los billetes que salen y los que entran."; errEl.style.display="block"; return;
+    }
+    if(Math.abs(sale.total-entra.total)>=0.005){
+      errEl.textContent="Los montos no cuadran: lo que sale debe ser igual a lo que entra."; errEl.style.display="block"; return;
+    }
+    // Validar que haya suficiente inventario para los billetes que salen
+    var inv=calcInventario();
+    var faltan=[];
+    DENOMINACIONES.forEach(function(v){
+      if(sale.denoms[v] > (inv[v]||0)) faltan.push(sale.denoms[v]+" x L"+v+" (hay "+(inv[v]||0)+")");
+    });
+    if(faltan.length){
+      errEl.textContent="No hay suficientes billetes para el cambio: "+faltan.join(", ")+".";
+      errEl.style.display="block"; return;
+    }
+
+    var submitBtn=document.getElementById("cambioSubmit");
+    submitBtn.disabled=true; submitBtn.textContent="Registrando...";
+    var descUser=document.getElementById("cambioDesc").value.trim();
+    var baseDesc=descUser||("Cambio de billetes por "+fmt(sale.total));
+    var ahora=new Date().toISOString();
+    var resp=(usuarioActual && usuarioActual.nombre) ? usuarioActual.nombre : "Caja";
+
+    // 1) Egreso (sale) -> 2) Ingreso (entra) ligado al egreso via cambioDe
+    var egreso={ id:uid(), fecha:ahora, tipo:"egreso", responsable:resp, entregadoA:"",
+      descripcion:baseDesc+" (sale)", denominaciones:sale.denoms, monto:sale.total,
+      firmaEntrega:"", firmaRecibe:"", esPendiente:false, origenPendiente:"", esExterno:false, cambioDe:[] };
+
+    setSyncState("syncing","Registrando cambio...");
+    apiGuardarMovimiento("addMovimiento",egreso).then(function(){
+      state.movimientos.push(egreso);
+      var ingreso={ id:uid(), fecha:ahora, tipo:"ingreso", responsable:resp, entregadoA:"",
+        descripcion:baseDesc+" (entra)", denominaciones:entra.denoms, monto:entra.total,
+        firmaEntrega:"", firmaRecibe:"", esPendiente:false, origenPendiente:"", esExterno:false,
+        cambioDe:[egreso.id] };
+      return apiGuardarMovimiento("addMovimiento",ingreso).then(function(){
+        state.movimientos.push(ingreso);
+        cerrar(); renderAll();
+        setSyncState("ok","Cambio registrado");
+        submitBtn.disabled=false; submitBtn.textContent="Registrar cambio";
+      });
+    }).catch(function(err){
+      submitBtn.disabled=false; submitBtn.textContent="Registrar cambio";
+      errEl.textContent="Error al registrar: "+err.message; errEl.style.display="block";
+      setSyncState("err");
+      loadData(true); // resincronizar por si el egreso sí entró
+    });
+  });
+})();
 
 // ================================================================
 // Filtros e historial
