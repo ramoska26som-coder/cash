@@ -4298,8 +4298,14 @@ function iniciarSesionApp(){
     if(r.error) throw new Error("No se pudo cargar tu perfil: "+r.error.message);
     usuarioActual = r.data;
     if(!usuarioActual.activo){ throw new Error("Tu usuario está inactivo. Contacta al administrador."); }
-    // El cajero y la gerencia necesitan los nombres de quién solicita
-    if(usuarioActual.rol==="cajero" || usuarioActual.rol==="admin"){
+    // Determinar acceso de caja desde la tabla caja_cajeros (independiente del rol de VerifiCrédito)
+    return sb.from("caja_cajeros").select("user_id,autoriza").eq("user_id", usuarioActual.id).maybeSingle();
+  }).then(function(rc){
+    var fila = (rc && rc.data) ? rc.data : null;
+    esCajeroActual = !!fila;
+    puedeAutorizarActual = (usuarioActual.rol==="admin") || (fila && fila.autoriza===true);
+    // El cajero y quien autoriza necesitan los nombres de quién solicita
+    if(esCajeroActual || puedeAutorizarActual){
       return cargarCatalogoPerfiles().then(aplicarVistaPorRol);
     }
     aplicarVistaPorRol();
@@ -4312,14 +4318,13 @@ function iniciarSesionApp(){
   });
 }
 
-// Decide la interfaz según el rol.
-//  - cajero: app completa (flujo, arqueo, órdenes) + bandeja de solicitudes
-//  - admin (gerencia): SOLO bandeja de solicitudes (autorizar/rechazar)
-//  - cualquier otro (asesor/analista/verificador/solicitante): SOLO crear y ver sus solicitudes
+// Decide la interfaz según el acceso de caja (tabla caja_cajeros), no el rol de VerifiCrédito.
+//  - cajero (en caja_cajeros): app completa (flujo, arqueo, órdenes) + bandeja de solicitudes (donde además autoriza)
+//  - gerencia pura (admin que NO está en caja_cajeros): solo bandeja de solicitudes para autorizar/rechazar
+//  - cualquier otro: solo crear y ver sus propias solicitudes
 function aplicarVistaPorRol(){
-  var rol = usuarioActual.rol;
-  var esCajero = (rol === "cajero");
-  var esGerencia = (rol === "admin");
+  var esCajero = esCajeroActual;
+  var esGerencia = puedeAutorizarActual && !esCajeroActual; // gerencia pura (autoriza pero no opera caja)
 
   // Nombre del usuario en la topbar
   var nom = document.getElementById("usuarioNombre");
@@ -4358,7 +4363,7 @@ function cargarSolicitudes(){
       if(r.error){ console.warn("solicitudes:", r.error.message); return; }
       state.solicitudes = r.data || [];
       // Pintar donde corresponda según rol
-      if(usuarioActual.rol === "cajero"){ if(typeof renderSolicitudesCajero==="function") renderSolicitudesCajero(); }
+      if(esCajeroActual){ if(typeof renderSolicitudesCajero==="function") renderSolicitudesCajero(); }
       else { renderVistaRol(); }
       actualizarBadgeSolicitudes();
     });
@@ -4368,10 +4373,9 @@ function actualizarBadgeSolicitudes(){
   // Badge con número de pendientes (para cajero y gerencia)
   var b = document.getElementById("solicBadge");
   if(!b) return;
-  var rol = usuarioActual.rol;
   var n = 0;
-  if(rol==="admin"){ n = state.solicitudes.filter(function(s){ return s.estado==="pendiente"; }).length; }
-  else if(rol==="cajero"){ n = state.solicitudes.filter(function(s){ return s.estado==="pendiente" || s.estado==="autorizada"; }).length; }
+  if(esCajeroActual){ n = state.solicitudes.filter(function(s){ return s.estado==="pendiente" || s.estado==="autorizada"; }).length; }
+  else if(puedeAutorizarActual){ n = state.solicitudes.filter(function(s){ return s.estado==="pendiente"; }).length; }
   if(n>0){ b.textContent=n; b.style.display="inline-flex"; } else { b.style.display="none"; }
 }
 
@@ -4404,8 +4408,7 @@ function eliminarSolicitud(id){
 function renderVistaRol(){
   var cont = document.getElementById("rolVista");
   if(!cont) return;
-  var rol = usuarioActual.rol;
-  var esGerencia = (rol === "admin");
+  var esGerencia = puedeAutorizarActual;
   var sols = state.solicitudes || [];
 
   var html = '<div class="wrap">';
@@ -4421,11 +4424,11 @@ function renderVistaRol(){
 
   if(esGerencia){
     var pend = sols.filter(function(s){ return s.estado==="pendiente"; });
-    html += seccionSolic("Pendientes de autorizar", pend, rol);
+    html += seccionSolic("Pendientes de autorizar", pend);
     var resto = sols.filter(function(s){ return s.estado!=="pendiente"; });
-    html += seccionSolic("Historial", resto, rol);
+    html += seccionSolic("Historial", resto);
   } else {
-    html += seccionSolic("", sols, rol);
+    html += seccionSolic("", sols);
   }
   html += '</div>';
   cont.innerHTML = html;
@@ -4451,8 +4454,8 @@ function chipEstadoSolic(estado){
   return '<span class="chip '+c[0]+'">'+c[1]+'</span>';
 }
 
-function seccionSolic(titulo, lista, rol){
-  var esGerencia = (rol==="admin");
+function seccionSolic(titulo, lista){
+  var esGerencia = puedeAutorizarActual;
   var h = "";
   if(titulo) h += '<h3 class="rol-sec-titulo">'+titulo+'</h3>';
   if(!lista.length){
@@ -4478,7 +4481,7 @@ function seccionSolic(titulo, lista, rol){
              '<button class="btn btn-danger" data-rec="'+s.id+'">Rechazar</button>'+
            '</div>';
     }
-    if(!esGerencia && rol!=="cajero" && s.estado==="pendiente"){
+    if(!esGerencia && s.estado==="pendiente"){
       h += '<div class="solic-acciones"><button class="btn btn-ghost" data-del-solic="'+s.id+'">Eliminar</button></div>';
     }
     h += '</div></div>';
