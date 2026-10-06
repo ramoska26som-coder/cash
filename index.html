@@ -228,14 +228,15 @@
   .pd-titulo{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--warn);}
   .pd-total{font-family:var(--font-mono);font-weight:700;font-size:14px;color:var(--warn);}
   .pd-lista{display:flex;flex-direction:column;gap:3px;}
-  .pd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;padding:2px 0;}
+  .pd-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;font-size:12.5px;padding:2px 0;}
   .pd-item.pd-clickable{cursor:pointer;border-radius:6px;padding:4px 6px;margin:0 -6px;transition:background .12s;}
   .pd-item.pd-clickable:hover{background:rgba(0,0,0,.05);}
-  .pd-item .pd-desc{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;flex-direction:column;}
+  .pd-item .pd-desc{color:var(--ink);min-width:0;display:flex;flex-direction:column;}
   .pd-item .pd-desc small{color:var(--ink-faint);font-weight:600;}
   .pd-item .pd-desc-linea{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .pd-item .pd-fecha{font-size:11px;color:var(--ink-faint);font-family:var(--font-mono);margin-top:1px;}
-  .pd-item .pd-monto{font-family:var(--font-mono);font-weight:600;color:var(--ink-soft);flex-shrink:0;}
+  .pd-item .pd-receptor{font-size:11px;color:var(--ink-faint);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+  .pd-item .pd-fecha{font-size:11px;color:var(--ink-faint);font-family:var(--font-mono);white-space:nowrap;flex-shrink:0;}
+  .pd-item .pd-monto{font-family:var(--font-mono);font-weight:600;color:var(--ink-soft);flex-shrink:0;white-space:nowrap;}
   .pd-grupo-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
     margin:8px 0 3px;padding-top:6px;border-top:1px solid #E8D9B0;
     font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--warn);}
@@ -863,6 +864,9 @@
           <input type="text" id="searchInput" placeholder="Buscar...">
         </div>
       </div>
+      <div class="historial-header" style="margin-top:-6px;">
+        <select id="filtroCategoria" class="an-periodo" style="font-size:12.5px;"><option value="">Todas las categorías</option></select>
+      </div>
       <div id="historialGroups"></div>
     </div>
 
@@ -1323,6 +1327,7 @@
           <button type="button" class="add-person-confirm" data-target="entregadoASelect">Agregar</button>
         </div>
       </div>
+      <p class="hint" id="cajeroImplicitoNota" style="display:none;margin:-4px 0 10px;font-weight:600;color:var(--blue);"></p>
       <div class="field">
         <label for="descripcionInput">Descripción</label>
         <div class="etiq-select" id="etiqSelectMov">
@@ -1342,6 +1347,12 @@
           </div>
         </div>
         <textarea id="descripcionInput" placeholder="Motivo del movimiento"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="categoriaSelect">Categoría</label>
+        <select id="categoriaSelect"></select>
+        <p class="hint" id="categoriaAutoNota" style="display:none;">Sugerida por la descripción. Puedes cambiarla.</p>
       </div>
 
       <!-- Check: efectivo pendiente externo (visible solo en modo pendiente) -->
@@ -1625,6 +1636,8 @@ function cargarCatalogoPerfiles(){
   }).catch(function(){});
 }
 var DENOMS = [500,200,100,50,20,10,5,2,1];
+// Categorías oficiales (orden de aparición en selectores/filtros)
+var CATEGORIAS = ["Préstamos","Combustibles","Empleados","Efectivo Nery","Cambios de cheque","Recargas","Insumos/Agua","Dividendos","Otros"];
 
 // ---- Mapeo fila BD (snake) -> objeto frontend (camel, con denominaciones{}) ----
 function movDesdeBD(r){
@@ -1644,7 +1657,8 @@ function movDesdeBD(r){
     esPendiente: !!r.es_pendiente,
     origenPendiente: String(r.origen_pendiente||""),
     esExterno: !!r.es_externo,
-    cambioDe: Array.isArray(r.cambio_de) ? r.cambio_de.map(String) : []
+    cambioDe: Array.isArray(r.cambio_de) ? r.cambio_de.map(String) : [],
+    categoria: String(r.categoria||"Otros")
   };
 }
 // Construye el payload snake para insertar/actualizar un movimiento
@@ -1659,7 +1673,8 @@ function movHaciaBD(m){
     es_pendiente: !!m.esPendiente,
     origen_pendiente: m.origenPendiente||"",
     es_externo: !!m.esExterno,
-    cambio_de: (m.cambioDe||[]).map(function(x){ return parseInt(x,10); }).filter(function(n){ return !isNaN(n); })
+    cambio_de: (m.cambioDe||[]).map(function(x){ return parseInt(x,10); }).filter(function(n){ return !isNaN(n); }),
+    categoria: m.categoria||"Otros"
   };
   DENOMS.forEach(function(v){ o["d"+v] = Number((m.denominaciones||{})[v])||0; });
   // Firmas: solo si vienen (no sobrescribir con vacío al actualizar)
@@ -1900,7 +1915,7 @@ function sbErr(error){ if(error) throw new Error(error.message || "Error en el s
 // ---- getData: lee todo lo que el cajero necesita ----
 function sbGetData(){
   return Promise.all([
-    sb.from("caja_movimientos").select("id,fecha,tipo,responsable,entregado_a,descripcion,monto,d500,d200,d100,d50,d20,d10,d5,d2,d1,es_pendiente,origen_pendiente,es_externo,cambio_de,tiene_firma_entrega,tiene_firma_recibe").order("fecha",{ascending:false}),
+    sb.from("caja_movimientos").select("id,fecha,tipo,responsable,entregado_a,descripcion,monto,d500,d200,d100,d50,d20,d10,d5,d2,d1,es_pendiente,origen_pendiente,es_externo,cambio_de,categoria,tiene_firma_entrega,tiene_firma_recibe").order("fecha",{ascending:false}),
     sb.from("caja_arqueos").select("id,fecha,hora,responsable,verificador,total_contado,efectivo_pendiente,teorico,sistema,excel,diferencia,notas,denominaciones,pendientes_lista,creado_en,tiene_firma_responsable,tiene_firma_verificador").order("creado_en",{ascending:false}),
     sb.from("caja_ordenes").select("id,fecha,descripcion,monto,recibe,autorizador,estado,movimiento_id,creado_en,tiene_firma_autoriza").order("creado_en",{ascending:false}),
     sb.from("caja_personas").select("nombre").order("nombre"),
@@ -2034,6 +2049,7 @@ function sbUpdateConfig(data){
 var state = { saldoInicial:0, movimientos:[], saldoExcel:null, saldoSistema:null, saldoMinimo:null, efectivoPendiente:0, personas:[], arqueos:[], etiquetas:[], ordenes:[], solicitudes:[] };
 var selectedTipo = "ingreso";
 var filtroTipo = "todos";
+var filtroCategoria = "";
 var searchQuery = "";
 var editingId = null;
 
@@ -2313,7 +2329,8 @@ function getPendientesList(){
       origen: m.tipo==="pendiente_banco" ? "banco" : "caja",
       esExterno: !!m.esExterno,
       monto: m.monto,
-      fecha: m.fecha
+      fecha: m.fecha,
+      entregadoA: m.entregadoA||""
     };
   }).sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
 }
@@ -2465,10 +2482,12 @@ function renderPendientesDetalle(total){
     return items.map(function(p){
       var fd=parseFechaISO(p.fecha);
       var fechaTxt=pad(fd.getDate())+"/"+pad(fd.getMonth()+1)+"/"+fd.getFullYear();
+      var receptor = p.entregadoA ? ('<span class="pd-receptor">→ '+esc(p.entregadoA)+'</span>') : '';
       return '<div class="pd-item pd-clickable" data-detalle="'+esc(String(p.id))+'" title="Ver detalle">'+
         '<span class="pd-desc">'+
           '<span class="pd-desc-linea">'+esc(p.descripcion)+' <small>('+p.origen+')</small></span>'+
-          '<span class="pd-fecha">'+fechaTxt+'</span></span>'+
+          receptor+'</span>'+
+        '<span class="pd-fecha">'+fechaTxt+'</span>'+
         '<span class="pd-monto">'+fmt(p.monto)+'</span></div>';
     }).join("");
   }
@@ -2531,6 +2550,7 @@ function renderHistorialGroups(){
 
   var movs=state.movimientos.slice();
   if(filtroTipo!=="todos") movs=movs.filter(function(m){ return m.tipo===filtroTipo; });
+  if(filtroCategoria){ movs=movs.filter(function(m){ return (m.categoria||anCategoria(m.descripcion))===filtroCategoria; }); }
   if(searchQuery.trim()){
     var q=searchQuery.trim().toLowerCase();
     movs=movs.filter(function(m){
@@ -2802,6 +2822,7 @@ function aplicarEtiquetaEn(textareaId, texto){
     ta.value=actual+sep+texto;
   }
   ta.focus();
+  if(textareaId==="descripcionInput" && typeof sugerirCategoriaDesdeDescripcion==="function") sugerirCategoriaDesdeDescripcion();
 }
 
 // Instancias: modal de movimiento y formulario de órdenes
@@ -3118,12 +3139,53 @@ document.getElementById("saldoMinimoInput").addEventListener("change",function(e
 // ================================================================
 var selectedOrigen="caja"; // solo aplica cuando selectedTipo==="pendiente"
 
+function nombreCajero(){ return (usuarioActual && usuarioActual.nombre) ? usuarioActual.nombre : "Cajero"; }
+
+// --- Categorías en el modal ---
+var _categoriaTocadaManual=false; // si el usuario eligió a mano, no re-sugerir
+function poblarCategoriaSelect(seleccion){
+  var sel=document.getElementById("categoriaSelect"); if(!sel) return;
+  sel.innerHTML=CATEGORIAS.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
+  if(seleccion && CATEGORIAS.indexOf(seleccion)!==-1) sel.value=seleccion;
+}
+function sugerirCategoriaDesdeDescripcion(){
+  if(_categoriaTocadaManual) return;
+  var desc=document.getElementById("descripcionInput").value;
+  var sug=anCategoria(desc);
+  var sel=document.getElementById("categoriaSelect");
+  if(sel) sel.value=sug;
+  var nota=document.getElementById("categoriaAutoNota");
+  if(nota) nota.style.display = desc.trim() ? "block":"none";
+}
+// ¿Se está pidiendo "quién recibe" al usuario? (egreso o pendiente de caja)
+function mostrarEntregadoSel(){
+  return selectedTipo==="egreso" || (selectedTipo==="pendiente" && selectedOrigen==="caja");
+}
+
 function actualizarUIMovimiento(){
   var esPend=selectedTipo==="pendiente";
   var esEgreso=selectedTipo==="egreso";
+  var esIngresoT=selectedTipo==="ingreso";
   // Campo "entregado a" solo en egreso o pendiente de caja
   var mostrarEntregado = esEgreso || (esPend && selectedOrigen==="caja");
   document.getElementById("entregadoAField").style.display = mostrarEntregado ? "block":"none";
+
+  // Quién entrega / quién recibe según el tipo:
+  // - Ingreso: el usuario elige QUIEN ENTREGA; el cajero RECIBE (implícito)
+  // - Egreso/pendiente: el cajero ENTREGA (implícito); el usuario elige QUIEN RECIBE
+  var respField=document.getElementById("responsableSelect").closest(".field");
+  var respLabel=document.querySelector('label[for="responsableSelect"]');
+  var entLabel=document.querySelector('label[for="entregadoASelect"]');
+  if(respField){ respField.style.display = esIngresoT ? "" : "none"; }
+  if(respLabel){ respLabel.textContent = "Quién entrega"; }
+  if(entLabel){ entLabel.innerHTML = 'Quién recibe <span style="color:var(--egreso);">*</span>'; }
+  // Nota informativa de quién queda implícito como cajero
+  var nota=document.getElementById("cajeroImplicitoNota");
+  if(nota){
+    if(esIngresoT){ nota.style.display="block"; nota.textContent="Recibe: "+nombreCajero()+" (cajero)"; }
+    else if(mostrarEntregado || esPend){ nota.style.display="block"; nota.textContent="Entrega: "+nombreCajero()+" (cajero)"; }
+    else { nota.style.display="none"; }
+  }
   // Selector de origen solo en pendiente
   document.getElementById("origenPendienteField").style.display = esPend ? "block":"none";
   // En pendiente de banco: sin billetes, monto directo
@@ -3178,6 +3240,12 @@ document.querySelectorAll(".origen-btn").forEach(function(btn){
     actualizarUIMovimiento();
   });
 });
+// Categoría: sugerir al escribir la descripción; respetar si el usuario la cambia a mano
+document.getElementById("descripcionInput").addEventListener("input", sugerirCategoriaDesdeDescripcion);
+document.getElementById("categoriaSelect").addEventListener("change", function(){
+  _categoriaTocadaManual=true;
+  document.getElementById("categoriaAutoNota").style.display="none";
+});
 
 // ================================================================
 // Modal movimiento
@@ -3196,6 +3264,9 @@ function openModal(){
   var now=new Date();
   document.getElementById("movFecha").value=now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate());
   document.getElementById("movHora").value=pad(now.getHours())+":"+pad(now.getMinutes());
+  _categoriaTocadaManual=false;
+  poblarCategoriaSelect("Otros");
+  document.getElementById("categoriaAutoNota").style.display="none";
   actualizarUIMovimiento();
   modalOverlay.classList.add("open");
   document.getElementById("formError").style.display="none";
@@ -3217,6 +3288,9 @@ function openModalEdit(id){
   document.getElementById("responsableSelect").value=mov.responsable;
   document.getElementById("entregadoASelect").value=mov.entregadoA||"";
   document.getElementById("descripcionInput").value=mov.descripcion;
+  _categoriaTocadaManual=true; // al editar, respetar la categoría guardada
+  poblarCategoriaSelect(mov.categoria||"Otros");
+  document.getElementById("categoriaAutoNota").style.display="none";
   // Cargar fecha y hora del movimiento
   var dmov=parseFechaISO(mov.fecha);
   document.getElementById("movFecha").value=dmov.getFullYear()+"-"+pad(dmov.getMonth()+1)+"-"+pad(dmov.getDate());
@@ -3299,8 +3373,23 @@ document.getElementById("movimientoForm").addEventListener("submit",function(e){
     origenPend = esPend ? "caja" : "";
   }
 
+  // Quién entrega / recibe según el tipo (el cajero cubre el lado implícito)
+  var esIngresoReal = (tipoReal==="ingreso");
+  if(esIngresoReal){
+    // Ingreso: el usuario eligió quien entrega; el cajero recibe
+    // responsable = lo seleccionado; receptor lo definimos abajo = cajero
+  } else {
+    // Egreso o pendiente: el cajero entrega; el usuario eligió quien recibe
+    responsable = nombreCajero();
+  }
+
   // Validaciones
-  if(!responsable){ errEl.textContent="Selecciona el responsable."; errEl.style.display="block"; return; }
+  if(esIngresoReal && !document.getElementById("responsableSelect").value){
+    errEl.textContent="Selecciona quién entrega."; errEl.style.display="block"; return;
+  }
+  if(!esIngresoReal && mostrarEntregadoSel() && !document.getElementById("entregadoASelect").value){
+    errEl.textContent="Selecciona quién recibe."; errEl.style.display="block"; return;
+  }
   if(!descripcion){ errEl.textContent="Agrega una descripción."; errEl.style.display="block"; return; }
   if(esBanco){
     if(monto<=0){ errEl.textContent="Ingresa el monto del efectivo pendiente."; errEl.style.display="block"; return; }
@@ -3333,9 +3422,16 @@ document.getElementById("movimientoForm").addEventListener("submit",function(e){
   if(selectedTipo==="ingreso" && document.getElementById("esCambioCheck").checked){
     cambioDe = cambioSeleccion.slice();
   }
+  var categoria = document.getElementById("categoriaSelect").value || "Otros";
 
-  var mostrarEntregado = (tipoReal==="egreso");
-  var entregadoFinal = (mostrarEntregado && entregadoA) ? entregadoA : "";
+  // Receptor final:
+  // - Ingreso: el cajero recibe
+  // - Egreso / pendiente de caja: lo que el usuario eligió
+  // - Pendiente de banco: no aplica receptor
+  var entregadoFinal;
+  if(esIngresoReal){ entregadoFinal = nombreCajero(); }
+  else if(esBanco){ entregadoFinal = ""; }
+  else { entregadoFinal = entregadoA || ""; }
 
   var submitBtn=document.getElementById("submitBtn");
   submitBtn.disabled=true; submitBtn.textContent="Guardando...";
@@ -3359,7 +3455,7 @@ document.getElementById("movimientoForm").addEventListener("submit",function(e){
       responsable:responsable, entregadoA:entregadoFinal,
       descripcion:descripcion, denominaciones:denoms, monto:monto,
       firmaEntrega:fE, firmaRecibe:fR, esPendiente:esPendiente, origenPendiente:origenPend,
-      esExterno:esExterno, cambioDe:cambioDe };
+      esExterno:esExterno, cambioDe:cambioDe, categoria:categoria };
     guardarFirmaMovLocal(editingId, fE, fR);
     setSyncState("syncing","Actualizando...");
     apiGuardarMovimiento("updateMovimiento",movEd).then(function(res){
@@ -3376,7 +3472,7 @@ document.getElementById("movimientoForm").addEventListener("submit",function(e){
       responsable:responsable, entregadoA:entregadoFinal,
       descripcion:descripcion, denominaciones:denoms, monto:monto,
       firmaEntrega:firmaE, firmaRecibe:firmaR2, esPendiente:esPendiente, origenPendiente:origenPend,
-      esExterno:esExterno, cambioDe:cambioDe };
+      esExterno:esExterno, cambioDe:cambioDe, categoria:categoria };
     if(llevaFirmas) guardarFirmaMovLocal(nid, firmaE, firmaR2);
     var ordVinculada=ordenParaRegistrar; // capturar antes de cerrar
     var solicVinculada=(typeof solicitudParaCompletar!=="undefined")?solicitudParaCompletar:null;
@@ -3907,13 +4003,21 @@ document.getElementById("detalleVueltoBtn").addEventListener("click",function(){
 // ================================================================
 // Filtros e historial
 // ================================================================
-document.querySelectorAll(".filtro-btn").forEach(function(btn){
+document.querySelectorAll(".filtro-btn[data-filtro]").forEach(function(btn){
   btn.addEventListener("click",function(){
-    document.querySelectorAll(".filtro-btn").forEach(function(b){ b.classList.remove("active"); });
+    document.querySelectorAll(".filtro-btn[data-filtro]").forEach(function(b){ b.classList.remove("active"); });
     btn.classList.add("active"); filtroTipo=btn.getAttribute("data-filtro"); renderHistorialGroups();
   });
 });
 document.getElementById("searchInput").addEventListener("input",function(e){ searchQuery=e.target.value; renderHistorialGroups(); });
+// Filtro por categoría en el historial
+(function(){
+  var sel=document.getElementById("filtroCategoria");
+  if(sel){
+    CATEGORIAS.forEach(function(c){ var o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o); });
+    sel.addEventListener("change", function(){ filtroCategoria=sel.value; renderHistorialGroups(); });
+  }
+})();
 
 // ================================================================
 // Recargar / config
@@ -4010,18 +4114,18 @@ document.querySelectorAll(".tab[data-tab]").forEach(function(btn){
 // ================================================================
 var AN_COLORES={ ingreso:"#2E7CF6", egreso:"#E06B4F", neto:"#2FA37A", amber:"#E0A93B", morado:"#9B55C4" };
 
+// Auto-detección de categoría por descripción (DEBE coincidir con la función SQL
+// public.caja_categoria_auto para que frontend y backend clasifiquen igual).
 function anCategoria(desc){
   var d=(desc||"").toLowerCase();
-  if(/nuevo pr|préstamo|prestamo nuevo|nueva inversion|nueva inversión/.test(d) && !/ref/.test(d)) return "Préstamos nuevos";
-  if(/^ref|refinanc|reingreso/.test(d)) return "Refinanciamientos";
-  if(/combustible/.test(d)) return "Combustible";
-  if(/adelanto de salario/.test(d)) return "Adelanto salario";
-  if(/adelanto de dividendo|depresiacion|depreciaci/.test(d)) return "Dividendos/Deprec.";
+  if(/pago de combustible|pago de planilla|planilla|pago de comisiones|comisiones|adelanto de salario|pago de salario|prestaciones/.test(d)) return "Empleados";
+  if(/combustible/.test(d)) return "Combustibles";
+  if(/nuevo pr|nuevo préstamo|prestamo nuevo|préstamo nuevo|nueva inversion|nueva inversión|^ref|refinanc|reingreso/.test(d)) return "Préstamos";
   if(/efectivo nery/.test(d)) return "Efectivo Nery";
-  if(/planilla|pago de salario|comisiones|prestaciones/.test(d)) return "Planilla/Comisiones";
-  if(/cambio/.test(d)) return "Cambios";
+  if(/cambio de cheque/.test(d)) return "Cambios de cheque";
   if(/recarga/.test(d)) return "Recargas";
-  if(/botellon|botellón|agua|aseo|insumo|bolsa/.test(d)) return "Insumos/Aseo";
+  if(/botellon|botellón|agua|aseo|insumo|bolsa|tape|chip/.test(d)) return "Insumos/Agua";
+  if(/dividendo|depresiacion|depreciaci/.test(d)) return "Dividendos";
   return "Otros";
 }
 
@@ -4147,7 +4251,7 @@ function anRenderCategorias(movs){
   var mapa={};
   movs.forEach(function(m){
     if(m.tipo!=="egreso") return;
-    var c=anCategoria(m.descripcion);
+    var c=m.categoria || anCategoria(m.descripcion); // usa la guardada; si no, auto
     mapa[c]=(mapa[c]||0)+m.monto;
   });
   var items=Object.keys(mapa).map(function(k){ return {label:k, valor:round2(mapa[k])}; })
