@@ -231,8 +231,10 @@
   .pd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;padding:2px 0;}
   .pd-item.pd-clickable{cursor:pointer;border-radius:6px;padding:4px 6px;margin:0 -6px;transition:background .12s;}
   .pd-item.pd-clickable:hover{background:rgba(0,0,0,.05);}
-  .pd-item .pd-desc{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pd-item .pd-desc{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;flex-direction:column;}
   .pd-item .pd-desc small{color:var(--ink-faint);font-weight:600;}
+  .pd-item .pd-desc-linea{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pd-item .pd-fecha{font-size:11px;color:var(--ink-faint);font-family:var(--font-mono);margin-top:1px;}
   .pd-item .pd-monto{font-family:var(--font-mono);font-weight:600;color:var(--ink-soft);flex-shrink:0;}
   .pd-grupo-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
     margin:8px 0 3px;padding-top:6px;border-top:1px solid #E8D9B0;
@@ -810,7 +812,7 @@
         <div class="clabel">Saldo en Excel</div>
         <div class="compare-input-row">
           <span class="prefix">L</span>
-          <input type="number" step="0.01" inputmode="decimal" class="compare-input" id="saldoExcelInput" placeholder="0.00">
+          <input type="text" inputmode="text" class="compare-input expr-input" id="saldoExcelInput" placeholder="0.00 (o 50+45)">
         </div>
         <div id="statusExcel"></div>
         <p class="hint" id="baseComparacionExcel">Se compara con el saldo actual del flujo.</p>
@@ -819,7 +821,7 @@
         <div class="clabel">Saldo en Sistema</div>
         <div class="compare-input-row">
           <span class="prefix">L</span>
-          <input type="number" step="0.01" inputmode="decimal" class="compare-input" id="saldoSistemaInput" placeholder="0.00">
+          <input type="text" inputmode="text" class="compare-input expr-input" id="saldoSistemaInput" placeholder="0.00 (o 50+45)">
         </div>
         <div id="statusSistema"></div>
         <p class="hint" id="baseComparacionSistema">Se compara con saldo actual + efectivo pendiente.</p>
@@ -960,9 +962,9 @@
         <h2>Resumen</h2>
         <p class="ahint">El teórico se precarga con el saldo del flujo. Edítalo si necesitas.</p>
         <div class="resumen">
-          <div class="resumen-row"><label>Efectivo pendiente</label><input type="number" step="0.01" id="arqPendiente" placeholder="0.00"></div>
-          <div class="resumen-row"><label>Teórico (Excel)</label><input type="number" step="0.01" id="arqTeorico" placeholder="0.00"></div>
-          <div class="resumen-row"><label>Sistema</label><input type="number" step="0.01" id="arqSistema" placeholder="0.00"></div>
+          <div class="resumen-row"><label>Efectivo pendiente</label><input type="text" inputmode="text" class="expr-input" id="arqPendiente" placeholder="0.00 (o 50+45)"></div>
+          <div class="resumen-row"><label>Teórico (Excel)</label><input type="text" inputmode="text" class="expr-input" id="arqTeorico" placeholder="0.00 (o 50+45)"></div>
+          <div class="resumen-row"><label>Sistema</label><input type="text" inputmode="text" class="expr-input" id="arqSistema" placeholder="0.00 (o 50+45)"></div>
           <div class="resumen-row"><label>Diferencia (contado − teórico)</label><span id="arqDifValue" class="dif-value dif-ok">L 0.00</span></div>
         </div>
       </div>
@@ -1200,7 +1202,7 @@
     <div class="field" style="margin-top:12px;">
       <label for="solicMonto">Monto solicitado</label>
       <div class="compare-input-row"><span class="prefix">L</span>
-        <input type="number" step="0.01" inputmode="decimal" class="compare-input" id="solicMonto" placeholder="0.00"></div>
+        <input type="text" inputmode="text" class="compare-input expr-input" id="solicMonto" placeholder="0.00 (o 50+45)"></div>
     </div>
     <div class="field">
       <label for="solicBenef">Para quién / destino</label>
@@ -1384,7 +1386,7 @@
         <label for="montoDirectoInput">Monto (de banco)</label>
         <div class="compare-input-row">
           <span class="prefix">L</span>
-          <input type="number" step="0.01" inputmode="decimal" class="compare-input" id="montoDirectoInput" placeholder="0.00">
+          <input type="text" inputmode="text" class="compare-input expr-input" id="montoDirectoInput" placeholder="0.00 (o 50+45)">
         </div>
         <p class="hint">Este monto no afecta el saldo del flujo de caja ni los billetes; solo suma al efectivo pendiente.</p>
       </div>
@@ -1484,13 +1486,13 @@
         <div class="field">
           <label for="vueltoMontoVuelto">Vuelto (lo que volvió)</label>
           <div class="compare-input-row"><span class="prefix">L</span>
-            <input type="number" step="0.01" inputmode="decimal" class="compare-input" id="vueltoMontoVuelto" placeholder="0.00"></div>
+            <input type="text" inputmode="text" class="compare-input expr-input" id="vueltoMontoVuelto" placeholder="0.00 (o 50+45)"></div>
         </div>
         <div class="vuelto-o">o</div>
         <div class="field">
           <label for="vueltoGastoReal">Gasto real</label>
           <div class="compare-input-row"><span class="prefix">L</span>
-            <input type="number" step="0.01" inputmode="decimal" class="compare-input" id="vueltoGastoReal" placeholder="0.00"></div>
+            <input type="text" inputmode="text" class="compare-input expr-input" id="vueltoGastoReal" placeholder="0.00 (o 50+45)"></div>
         </div>
       </div>
 
@@ -1518,12 +1520,12 @@
     </div>
     <div class="config-field">
       <label for="saldoInicialInput">Saldo inicial de caja</label>
-      <input type="number" step="0.01" inputmode="decimal" id="saldoInicialInput" placeholder="0.00">
+      <input type="text" inputmode="text" class="expr-input" id="saldoInicialInput" placeholder="0.00 (o 50+45)">
       <div class="desc">Monto base desde el cual se calculan los saldos. Suele ser el efectivo con que arranca la caja.</div>
     </div>
     <div class="config-field">
       <label for="saldoMinimoInput">Límite mínimo de saldo</label>
-      <input type="number" step="0.01" inputmode="decimal" id="saldoMinimoInput" placeholder="Sin límite">
+      <input type="text" inputmode="text" class="expr-input" id="saldoMinimoInput" placeholder="Sin límite (o 50+45)">
       <div class="desc">Si el saldo actual baja de este monto, la tarjeta de saldo se pone en rojo como alerta. Déjalo vacío para desactivar.</div>
     </div>
     <div class="config-field">
@@ -2461,8 +2463,12 @@ function renderPendientesDetalle(total){
 
   function filas(items){
     return items.map(function(p){
+      var fd=parseFechaISO(p.fecha);
+      var fechaTxt=pad(fd.getDate())+"/"+pad(fd.getMonth()+1)+"/"+fd.getFullYear();
       return '<div class="pd-item pd-clickable" data-detalle="'+esc(String(p.id))+'" title="Ver detalle">'+
-        '<span class="pd-desc">'+esc(p.descripcion)+' <small>('+p.origen+')</small></span>'+
+        '<span class="pd-desc">'+
+          '<span class="pd-desc-linea">'+esc(p.descripcion)+' <small>('+p.origen+')</small></span>'+
+          '<span class="pd-fecha">'+fechaTxt+'</span></span>'+
         '<span class="pd-monto">'+fmt(p.monto)+'</span></div>';
     }).join("");
   }
@@ -5539,6 +5545,35 @@ document.getElementById("solicClose").addEventListener("click", function(){
 document.getElementById("solicOverlay").addEventListener("click", function(e){
   if(e.target===document.getElementById("solicOverlay")) document.getElementById("solicOverlay").classList.remove("open");
 });
+
+// ================================================================
+// Campos de monto con expresiones (sumar/restar): cualquier input con
+// clase .expr-input resuelve "1500+300" -> "1800" al salir o con Enter.
+// Así todo el código que lee .value recibe ya un número puro.
+// ================================================================
+function resolverMontoExpr(input){
+  if(!input) return;
+  var v=String(input.value).trim();
+  if(v==="") return;
+  var r=evalExpr(v);
+  if(r!==null && isFinite(r)){
+    input.value = String(round2(r)); // montos: conservar decimales
+  }
+}
+document.addEventListener("keydown", function(e){
+  var t=e.target;
+  if(t && t.classList && t.classList.contains("expr-input")){
+    if(e.key==="Enter"){ e.preventDefault(); resolverMontoExpr(t); t.dispatchEvent(new Event("change",{bubbles:true})); t.dispatchEvent(new Event("input",{bubbles:true})); }
+  }
+}, true);
+document.addEventListener("blur", function(e){
+  var t=e.target;
+  if(t && t.classList && t.classList.contains("expr-input")){
+    var antes=t.value;
+    resolverMontoExpr(t);
+    if(t.value!==antes){ t.dispatchEvent(new Event("change",{bubbles:true})); t.dispatchEvent(new Event("input",{bubbles:true})); }
+  }
+}, true);
 
 // Registrar el Service Worker (PWA + cache offline del shell)
 if("serviceWorker" in navigator){
