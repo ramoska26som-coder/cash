@@ -242,6 +242,10 @@
     font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--warn);}
   .pd-grupo-head:first-child{margin-top:0;padding-top:0;border-top:none;}
   .pd-grupo-total{font-family:var(--font-mono);font-size:12.5px;}
+  .pd-subcat-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin:6px 0 2px;padding-left:2px;
+    font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-faint);}
+  .pd-subcat-total{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-faint);}
   .inventario-panel h2{font-family:var(--font-d);font-size:18px;font-weight:600;color:var(--blue-dark);margin:0 0 4px;}
   .inventario-subtitulo{font-size:12.5px;color:var(--ink-faint);margin:0 0 16px;}
   .inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;margin-bottom:14px;}
@@ -2497,11 +2501,10 @@ function renderPendientesDetalle(total){
     return items.map(function(p){
       var fd=parseFechaISO(p.fecha);
       var fechaTxt=pad(fd.getDate())+"/"+pad(fd.getMonth()+1)+"/"+fd.getFullYear();
-      var extra = p.esExterno ? '<small style="color:var(--warn);"> · externo</small>' : '';
       var receptor = p.entregadoA ? ('<span class="pd-receptor">→ '+esc(p.entregadoA)+'</span>') : '';
       return '<div class="pd-item pd-clickable" data-detalle="'+esc(String(p.id))+'" title="Ver detalle">'+
         '<span class="pd-desc">'+
-          '<span class="pd-desc-linea">'+esc(p.descripcion)+' <small>('+p.origen+')</small>'+extra+'</span>'+
+          '<span class="pd-desc-linea">'+esc(p.descripcion)+' <small>('+p.origen+')</small></span>'+
           receptor+'</span>'+
         '<span class="pd-fecha">'+fechaTxt+'</span>'+
         '<span class="pd-monto">'+fmt(p.monto)+'</span></div>';
@@ -2513,27 +2516,40 @@ function renderPendientesDetalle(total){
       filas(items);
   }
 
-  // Agrupar por categoría, respetando el orden oficial de CATEGORIAS
-  var porCat={};
-  lista.forEach(function(p){
-    var c=p.categoria||"Otros";
-    if(!porCat[c]) porCat[c]=[];
-    porCat[c].push(p);
-  });
-  var ordenCats=CATEGORIAS.filter(function(c){ return porCat[c]; });
-  // categorías no previstas (por si acaso) al final
-  Object.keys(porCat).forEach(function(c){ if(ordenCats.indexOf(c)===-1) ordenCats.push(c); });
-
-  var html="";
-  if(ordenCats.length<=1){
-    // una sola categoría: sin encabezado, se ve limpio
-    html=filas(lista);
-  } else {
-    html=ordenCats.map(function(c){
-      var items=porCat[c];
-      var sub=items.reduce(function(s,p){ return s+(p.monto||0); },0);
-      return grupo(c, items, sub);
+  // Subgrupo por categoría (segundo nivel), respetando el orden oficial de CATEGORIAS
+  function subgrupoPorCategoria(items){
+    var porCat={};
+    items.forEach(function(p){
+      var c=p.categoria||"Otros";
+      if(!porCat[c]) porCat[c]=[];
+      porCat[c].push(p);
+    });
+    var ordenCats=CATEGORIAS.filter(function(c){ return porCat[c]; });
+    Object.keys(porCat).forEach(function(c){ if(ordenCats.indexOf(c)===-1) ordenCats.push(c); });
+    return ordenCats.map(function(c){
+      var sub=porCat[c].reduce(function(s,p){ return s+(p.monto||0); },0);
+      return '<div class="pd-subcat-head"><span>'+esc(c)+'</span><span class="pd-subcat-total">'+fmt(sub)+'</span></div>'+
+        filas(porCat[c]);
     }).join("");
+  }
+  // Grupo mayor (Normal / Externo) con su subtotal y dentro las categorías
+  function grupoMayor(titulo, items){
+    if(!items.length) return "";
+    var sub=items.reduce(function(s,p){ return s+(p.monto||0); },0);
+    return '<div class="pd-grupo-head"><span>'+esc(titulo)+'</span><span class="pd-grupo-total">'+fmt(sub)+'</span></div>'+
+      subgrupoPorCategoria(items);
+  }
+
+  // Siempre dos grupos mayores: Normales y Externos; dentro, categorías
+  var normales=lista.filter(function(p){ return !p.esExterno; });
+  var externos=lista.filter(function(p){ return !!p.esExterno; });
+
+  var html;
+  if(!externos.length){
+    // sin externos: no hace falta el encabezado "Normales", solo las categorías
+    html=subgrupoPorCategoria(normales);
+  } else {
+    html=grupoMayor("Normales", normales)+grupoMayor("Externos", externos);
   }
   document.getElementById("pdLista").innerHTML=html;
 }
