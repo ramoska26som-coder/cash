@@ -2,8 +2,17 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <title>Flujo de Caja</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2F5C9E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Flujo de Caja">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -47,6 +56,10 @@
   .sync-badge.ok{background:var(--success-bg);color:var(--success);}
   .sync-badge.err{background:var(--danger-bg);color:var(--danger);}
   .sync-badge svg{width:13px;height:13px;flex-shrink:0;}
+  .offline-badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
+    padding:5px 10px;border-radius:999px;white-space:nowrap;}
+  .offline-badge.off{background:var(--warn-bg);color:var(--warn);}
+  .offline-badge.pend{background:var(--blue-bg);color:var(--blue);}
   .spin{animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .btn-icon{border:1px solid var(--border);background:var(--surface-2);color:var(--ink-soft);
@@ -64,6 +77,50 @@
   .tab.active{background:var(--blue-dark);color:#fff;}
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
+
+  /* ---- Análisis / dashboard ---- */
+  .an-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 18px;}
+  .an-title{font-family:var(--font-d);font-size:21px;font-weight:600;color:var(--blue-dark);margin:0;}
+  .an-sub{font-size:12.5px;color:var(--ink-faint);margin:3px 0 0;max-width:460px;}
+  .an-periodo{font-family:var(--font-ui);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--ink);cursor:pointer;}
+  .an-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px;}
+  @media(max-width:720px){ .an-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  .an-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 15px;}
+  .an-kpi .k-label{font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px;}
+  .an-kpi .k-valor{font-family:var(--font-mono);font-size:21px;font-weight:700;color:var(--ink);line-height:1.1;}
+  .an-kpi .k-valor.pos{color:var(--ingreso);}
+  .an-kpi .k-valor.neg{color:var(--egreso);}
+  .an-kpi .k-valor.warn{color:var(--warn);}
+  .an-kpi .k-sub{font-size:11.5px;color:var(--ink-faint);margin-top:4px;}
+  .an-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px;}
+  .an-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .an-card-head h3{font-size:15px;font-weight:600;color:var(--blue-dark);margin:0;}
+  .an-hint,.an-legend{font-size:11.5px;color:var(--ink-faint);}
+  .an-legend span{display:inline-flex;align-items:center;gap:4px;margin-left:10px;}
+  .an-legend i{width:10px;height:10px;border-radius:2px;display:inline-block;}
+  .an-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:720px){ .an-grid-2{grid-template-columns:1fr;} }
+  .an-chart{width:100%;overflow:visible;}
+  .an-chart svg{display:block;width:100%;height:auto;font-family:var(--font-ui);}
+  .an-chart text{fill:var(--ink-soft);}
+  .an-chart .gridline{stroke:var(--border);stroke-width:1;}
+  .an-chart .axis-lbl{font-size:10.5px;fill:var(--ink-faint);}
+  /* barras horizontales */
+  .an-bars{display:flex;flex-direction:column;gap:9px;}
+  .an-bar-row{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:10px;font-size:12.5px;}
+  @media(max-width:480px){ .an-bar-row{grid-template-columns:92px 1fr auto;font-size:11.5px;} }
+  .an-bar-lbl{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+  .an-bar-track{background:var(--surface-2,#EEF2F8);border-radius:6px;height:20px;overflow:hidden;}
+  .an-bar-fill{height:100%;border-radius:6px;transition:width .3s;min-width:2px;}
+  .an-bar-val{font-family:var(--font-mono);font-weight:700;color:var(--ink);white-space:nowrap;}
+  .an-desc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .an-desc-row:last-child{border-bottom:none;}
+  .an-desc-row .dr-fecha{font-weight:600;color:var(--ink);}
+  .an-desc-row .dr-resp{font-size:11.5px;color:var(--ink-faint);}
+  .an-desc-row .dr-dif{font-family:var(--font-mono);font-weight:700;}
+  .an-desc-row .dr-dif.neg{color:var(--egreso);}
+  .an-desc-row .dr-dif.pos{color:var(--warn);}
+  .an-vacio{font-size:13px;color:var(--ink-faint);text-align:center;padding:18px;}
 
   /* ---- Setup ---- */
   #setupScreen{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;}
@@ -419,6 +476,15 @@
   .cambio-aviso.ok{background:var(--success-bg);color:var(--success);border:1px solid #BFE0CF;}
   .cambio-aviso.bad{background:var(--warn-bg);color:var(--warn);border:1px solid #E8D9B0;}
   .cambio-aviso.empty{display:none;}
+  .vuelto-resumen{background:var(--surface-2,#EEF2F8);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;}
+  .vuelto-resumen .vr-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:3px 0;}
+  .vuelto-resumen .vr-row .vr-lbl{color:var(--ink-soft);}
+  .vuelto-resumen .vr-row .vr-val{font-family:var(--font-mono);font-weight:700;color:var(--ink);}
+  .vuelto-resumen .vr-row.vr-real{border-top:1px dashed var(--border);margin-top:4px;padding-top:7px;}
+  .vuelto-resumen .vr-row.vr-real .vr-val{color:var(--egreso);font-size:15px;}
+  .vuelto-dual{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:4px;}
+  .vuelto-dual .vuelto-o{font-size:12px;color:var(--ink-faint);font-weight:600;padding-top:18px;}
+  @media(max-width:460px){ .vuelto-dual{grid-template-columns:1fr;} .vuelto-dual .vuelto-o{padding-top:0;text-align:center;} }
   .denom-cell{border:1px solid var(--border);border-radius:8px;padding:7px 8px;background:var(--surface-2);}
   .denom-cell label{display:block;font-family:var(--font-mono);font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;}
   .denom-cell input{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px;
@@ -527,6 +593,11 @@
   .cambio-info .ci-lista li[data-ir-mov]:hover{color:var(--blue);}
   .cambio-info .ci-neto{margin-top:8px;font-size:13px;font-weight:600;color:var(--ink);text-align:right;}
   .cambio-info .ci-neto b{font-family:var(--font-mono);color:var(--egreso);}
+  .cambio-info .ci-desglose{margin-top:9px;}
+  .cambio-info .cd-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;padding:2px 0;color:var(--ink-soft);}
+  .cambio-info .cd-row b{font-family:var(--font-mono);color:var(--ink);}
+  .cambio-info .cd-row.cd-real{border-top:1px dashed var(--border);margin-top:5px;padding-top:7px;font-weight:700;color:var(--ink);}
+  .cambio-info .cd-row.cd-real b{color:var(--egreso);font-size:15px;}
   .firmas{display:flex;gap:16px;flex-wrap:wrap;}
   .firma-box{flex:1;min-width:220px;}
   .firma-box label{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
@@ -656,6 +727,7 @@
       </div>
       <div class="topbar-right">
         <span id="usuarioNombre" style="font-size:12.5px;color:var(--ink-soft);font-weight:600;margin-right:4px;"></span>
+        <div class="offline-badge" id="offlineBadge" style="display:none;" title="Estado de conexión"></div>
         <div class="sync-badge" id="syncBadge" style="display:none;"></div>
         <button class="btn-icon" id="recargarBtn" title="Recargar datos">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -676,6 +748,7 @@
   <div class="tabs-bar">
     <div class="tabs">
       <button class="tab active" data-tab="flujo">Flujo de Caja</button>
+      <button class="tab" data-tab="analisis">Análisis</button>
       <button class="tab" data-tab="arqueo">Arqueo</button>
       <button class="tab" data-tab="ordenes">Órdenes</button>
       <button class="tab" data-tab="solicitudes" id="tabBtnSolicitudes" style="display:none;position:relative;">Solicitudes<span class="solic-badge-tab" id="solicBadge" style="display:none;"></span></button>
@@ -796,6 +869,57 @@
       <button class="link-danger" id="resetBtn">Reiniciar caja (borra movimientos y saldos)</button>
     </div>
 
+  </div>
+  </div>
+
+  <!-- ===== TAB ANÁLISIS ===== -->
+  <div id="tab-analisis" class="tab-panel">
+  <div class="wrap">
+    <div class="an-head">
+      <div>
+        <h2 class="an-title">Análisis de caja</h2>
+        <p class="an-sub">Tendencias calculadas sobre todo tu historial de movimientos y arqueos.</p>
+      </div>
+      <select id="anPeriodo" class="an-periodo">
+        <option value="todo">Todo el historial</option>
+        <option value="90">Últimos 90 días</option>
+        <option value="30">Últimos 30 días</option>
+        <option value="mes">Mes actual</option>
+      </select>
+    </div>
+
+    <!-- KPIs -->
+    <div class="an-kpis" id="anKpis"></div>
+
+    <!-- Flujo neto por mes -->
+    <div class="an-card">
+      <div class="an-card-head"><h3>Flujo por mes</h3><span class="an-legend" id="anFlujoLegend"></span></div>
+      <div class="an-chart" id="anChartFlujo"></div>
+    </div>
+
+    <!-- Egresos por categoría -->
+    <div class="an-card">
+      <div class="an-card-head"><h3>Egresos por categoría</h3><span class="an-hint" id="anCatTotal"></span></div>
+      <div class="an-bars" id="anChartCategorias"></div>
+    </div>
+
+    <!-- Top receptores + presión por día -->
+    <div class="an-grid-2">
+      <div class="an-card">
+        <div class="an-card-head"><h3>Quién recibe más efectivo</h3></div>
+        <div class="an-bars" id="anChartReceptores"></div>
+      </div>
+      <div class="an-card">
+        <div class="an-card-head"><h3>Presión de caja por día</h3></div>
+        <div class="an-bars" id="anChartDias"></div>
+      </div>
+    </div>
+
+    <!-- Arqueos con descuadre -->
+    <div class="an-card">
+      <div class="an-card-head"><h3>Arqueos con descuadre</h3><span class="an-hint" id="anDescResumen"></span></div>
+      <div id="anDescuadres"></div>
+    </div>
   </div>
   </div>
 
@@ -1302,7 +1426,8 @@
     </div>
     <div id="detalleContenido"></div>
     <div class="mov-actions" style="margin-top:16px;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
-      <button type="button" class="btn btn-ghost" id="detallePasarEgresoBtn" style="display:none;border-color:var(--warn);color:var(--warn);margin-right:auto;">Pasar a egreso</button>
+      <button type="button" class="btn btn-ghost" id="detalleVueltoBtn" style="display:none;border-color:var(--ingreso);color:var(--ingreso);margin-right:auto;">↩ Registrar vuelto</button>
+      <button type="button" class="btn btn-ghost" id="detallePasarEgresoBtn" style="display:none;border-color:var(--warn);color:var(--warn);">Pasar a egreso</button>
       <button type="button" class="btn btn-danger" id="detalleEliminarBtn">Eliminar</button>
       <button type="button" class="btn btn-ghost" id="detalleFirmarBtn" style="border-color:var(--blue);color:var(--blue);">Firmar</button>
       <button type="button" class="btn btn-blue" id="detalleEditarBtn">Editar</button>
@@ -1338,6 +1463,46 @@
       <div id="cambioAviso" class="cambio-aviso"></div>
       <div class="form-error" id="cambioError" style="display:none;"></div>
       <button type="submit" class="btn btn-blue" id="cambioSubmit" style="width:100%;">Registrar cambio</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: registrar vuelto/cambio de un desembolso -->
+<div class="modal-overlay" id="vueltoOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Registrar vuelto del desembolso</h2>
+      <button type="button" class="modal-close" id="vueltoClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-subtitle" style="display:block;">Registra cuánto volvió de este desembolso. Se creará el ingreso del vuelto ligado automáticamente.</div>
+    <form id="vueltoForm">
+      <div class="vuelto-resumen" id="vueltoResumen"></div>
+
+      <div class="vuelto-dual">
+        <div class="field">
+          <label for="vueltoMontoVuelto">Vuelto (lo que volvió)</label>
+          <div class="compare-input-row"><span class="prefix">L</span>
+            <input type="number" step="0.01" inputmode="decimal" class="compare-input" id="vueltoMontoVuelto" placeholder="0.00"></div>
+        </div>
+        <div class="vuelto-o">o</div>
+        <div class="field">
+          <label for="vueltoGastoReal">Gasto real</label>
+          <div class="compare-input-row"><span class="prefix">L</span>
+            <input type="number" step="0.01" inputmode="decimal" class="compare-input" id="vueltoGastoReal" placeholder="0.00"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Desglose de billetes del vuelto <span style="color:var(--egreso);">*</span></label>
+        <div class="denom-grid" id="vueltoDenomGrid"></div>
+        <div class="cambio-tot-row"><span>Total en billetes</span><span class="mono" id="vueltoDenomTotal">L 0.00</span></div>
+      </div>
+
+      <div id="vueltoAviso" class="cambio-aviso"></div>
+      <div class="form-error" id="vueltoError" style="display:none;"></div>
+      <button type="submit" class="btn btn-blue" id="vueltoSubmit" style="width:100%;">Registrar vuelto</button>
     </form>
   </div>
 </div>
@@ -1540,7 +1705,8 @@ function ordDesdeBD(r){
 // api(action, data) — router a Supabase. Devuelve Promise {ok:true,...}
 // Lanza Error en fallo (igual que la versión Apps Script).
 // ================================================================
-function api(action, data){
+// apiReal: la implementación directa contra Supabase (antes era "api")
+function apiReal(action, data){
   data = data || {};
   switch(action){
     case "getData":            return sbGetData();
@@ -1563,6 +1729,169 @@ function api(action, data){
     default: return Promise.reject(new Error("Acción desconocida: "+action));
   }
 }
+
+// ================================================================
+// Capa OFFLINE: cache de lectura + cola de escritura + sincronización
+// (diseñada para un solo cajero/dispositivo a la vez)
+// ================================================================
+var OFF_CACHE_KEY = "cajaMasPisto_cache";
+var OFF_QUEUE_KEY = "cajaMasPisto_cola";
+var OFF_ESCRITURAS = { addMovimiento:1, updateMovimiento:1, deleteMovimiento:1,
+  addArqueo:1, updateArqueoFirmas:1, deleteArqueo:1, addOrden:1, updateOrden:1, deleteOrden:1,
+  addPersona:1, addEtiqueta:1, deleteEtiqueta:1, updateConfig:1 };
+var _sincronizando = false;
+
+function offLeerCola(){
+  try{ return JSON.parse(localStorage.getItem(OFF_QUEUE_KEY)||"[]"); }catch(e){ return []; }
+}
+function offGuardarCola(cola){
+  try{ localStorage.setItem(OFF_QUEUE_KEY, JSON.stringify(cola)); }catch(e){}
+  actualizarIndicadorOffline();
+}
+function offEncolar(action, data){
+  var cola = offLeerCola();
+  cola.push({ qid:uid(), action:action, data:data, ts:Date.now() });
+  offGuardarCola(cola);
+}
+function offHayPendientes(){ return offLeerCola().length; }
+
+// Guarda un snapshot del estado para abrir sin red
+function offGuardarCache(){
+  try{
+    localStorage.setItem(OFF_CACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      saldoInicial: state.saldoInicial, efectivoPendiente: state.efectivoPendiente,
+      saldoExcel: state.saldoExcel, saldoSistema: state.saldoSistema, saldoMinimo: state.saldoMinimo,
+      movimientos: state.movimientos, arqueos: state.arqueos, ordenes: state.ordenes,
+      personas: state.personas, etiquetas: state.etiquetas
+    }));
+  }catch(e){}
+}
+function offLeerCache(){
+  try{ return JSON.parse(localStorage.getItem(OFF_CACHE_KEY)||"null"); }catch(e){ return null; }
+}
+
+// Detecta si un error es de conexión (vs. un rechazo legítimo del servidor)
+function esErrorDeRed(err){
+  if(!navigator.onLine) return true;
+  var msg = (err && err.message || "").toLowerCase();
+  return /failed to fetch|networkerror|network error|load failed|fetch|timeout|tiempo de espera|offline|err_internet|err_network/.test(msg);
+}
+
+// api(): intercepta las ESCRITURAS para encolarlas si no hay red.
+// Las LECTURAS (getData/getFirmas) pasan directo; getData tiene su propio fallback a cache.
+function api(action, data){
+  if(action==="getData"){
+    return apiReal("getData").then(function(res){
+      // guardaremos el cache después de volcar a state (en loadData)
+      return res;
+    }).catch(function(err){
+      if(esErrorDeRed(err)){
+        var c = offLeerCache();
+        if(c){ var copia=Object.assign({ ok:true, _desdeCache:true, config:{
+          saldoInicial:c.saldoInicial, efectivoPendiente:c.efectivoPendiente,
+          saldoExcel:c.saldoExcel, saldoSistema:c.saldoSistema, saldoMinimo:c.saldoMinimo
+        }}, { movimientos:c.movimientos||[], arqueos:c.arqueos||[], ordenes:c.ordenes||[],
+          personas:c.personas||[], etiquetas:c.etiquetas||[] });
+          return copia;
+        }
+      }
+      throw err;
+    });
+  }
+  if(!OFF_ESCRITURAS[action]){
+    return apiReal(action, data); // otras lecturas (getFirmas)
+  }
+  // Es una escritura:
+  if(!navigator.onLine){
+    offEncolar(action, data);
+    return Promise.resolve({ ok:true, _encolado:true });
+  }
+  return apiReal(action, data).catch(function(err){
+    if(esErrorDeRed(err)){
+      offEncolar(action, data);
+      return { ok:true, _encolado:true };
+    }
+    throw err;
+  });
+}
+
+// Procesa la cola en orden. Remapea IDs temporales (uid) a los reales de la BD
+// en cualquier referencia cambioDe encolada después.
+function sincronizarCola(){
+  if(_sincronizando) return Promise.resolve();
+  if(!navigator.onLine) return Promise.resolve();
+  var cola = offLeerCola();
+  if(!cola.length) return Promise.resolve();
+  _sincronizando = true;
+  setSyncState("syncing","Sincronizando "+cola.length+" cambio(s)...");
+  var remap = {}; // uidTemporal -> idReal
+
+  function aplicarRemap(d){
+    if(!d) return d;
+    if(d.id && remap[d.id]) d.id = remap[d.id];
+    if(Array.isArray(d.cambioDe)) d.cambioDe = d.cambioDe.map(function(x){ return remap[x]||x; });
+    if(d.movimientoId && remap[d.movimientoId]) d.movimientoId = remap[d.movimientoId];
+    return d;
+  }
+
+  var i = 0;
+  function siguiente(){
+    if(i >= cola.length){
+      offGuardarCola([]); // todo procesado
+      _sincronizando = false;
+      return loadData(true).then(function(){ setSyncState("ok","Todo sincronizado"); });
+    }
+    var item = cola[i];
+    var data = aplicarRemap(Object.assign({}, item.data));
+    var uidTemporal = (item.action==="addMovimiento") ? item.data.id : null;
+    return apiReal(item.action, data).then(function(res){
+      // Si fue un alta y el servidor devolvió id real, guardarlo para remapear
+      if(uidTemporal && res && res.id){ remap[uidTemporal] = String(res.id); }
+      i++;
+      // persistir avance: quitar el item ya aplicado
+      var restante = cola.slice(i);
+      offGuardarCola(restante);
+      return siguiente();
+    }).catch(function(err){
+      _sincronizando = false;
+      if(esErrorDeRed(err)){
+        // se perdió la red a mitad: dejamos lo que falta para el próximo intento
+        setSyncState("err","Sin conexión — quedan "+(cola.length-i)+" por sincronizar");
+      } else {
+        // error real del servidor en este item: lo descartamos para no bloquear la cola
+        i++;
+        offGuardarCola(cola.slice(i));
+        setSyncState("err","Un cambio no se pudo sincronizar: "+err.message);
+      }
+      throw err;
+    });
+  }
+  return siguiente().catch(function(){ /* ya reportado */ });
+}
+
+// Indicador visual de estado offline / pendientes
+function actualizarIndicadorOffline(){
+  var el = document.getElementById("offlineBadge");
+  if(!el) return;
+  var pend = offHayPendientes();
+  if(!navigator.onLine){
+    el.style.display="inline-flex"; el.className="offline-badge off";
+    el.innerHTML = '⚡ Sin conexión'+(pend?(' · '+pend+' por guardar'):'');
+  } else if(pend){
+    el.style.display="inline-flex"; el.className="offline-badge pend";
+    el.innerHTML = '↑ '+pend+' por sincronizar';
+  } else {
+    el.style.display="none";
+  }
+}
+
+// Eventos de conexión
+window.addEventListener("online", function(){
+  actualizarIndicadorOffline();
+  sincronizarCola();
+});
+window.addEventListener("offline", actualizarIndicadorOffline);
 
 function sbErr(error){ if(error) throw new Error(error.message || "Error en el servidor"); }
 
@@ -1801,12 +2130,21 @@ function loadData(silent){
     state.etiquetas         = result.etiquetas||[];
     state.ordenes           = result.ordenes||[];
     hideError(); showApp(); syncInputsFromState(); renderAll();
-    if(silent) setSyncState("ok","Datos actualizados");
+    if(result._desdeCache){
+      setSyncState("err","Sin conexión — mostrando datos guardados");
+    } else {
+      offGuardarCache(); // snapshot fresco para abrir sin red
+      if(silent) setSyncState("ok","Datos actualizados");
+    }
+    actualizarIndicadorOffline();
+    // Si hay cambios en cola y hay red, sincronizar
+    if(navigator.onLine && offHayPendientes()){ sincronizarCola(); }
   }).catch(function(err){
     // Mostrar la app igual (con lo que haya) y un error accionable
     showApp();
     showError("No se pudo cargar: "+err.message);
     if(silent) setSyncState("err","Error al recargar");
+    actualizarIndicadorOffline();
   });
 }
 function syncInputsFromState(){
@@ -2020,7 +2358,7 @@ function renderAll(){
   renderPersonasOptions();
   renderEtiquetas();
   if(typeof ordRenderLista==="function") ordRenderLista();
-
+  if(typeof offGuardarCache==="function") offGuardarCache(); // mantener snapshot offline al día
 }
 
 // ================================================================
@@ -3181,8 +3519,12 @@ function abrirDetalleMovimiento(id){
         return '<li data-ir-mov="'+x.id+'" style="cursor:pointer;">'+esc(x.descripcion||"(sin descripción)")+
           ' · <b style="color:var(--ingreso);">+'+fmt(x.monto)+'</b> <span style="color:var(--ink-faint);">'+pad(dd.getDate())+"/"+pad(dd.getMonth()+1)+'</span></li>';
       }).join("");
-      cambioHtml='<div class="cambio-info"><div class="ci-titulo">Cambios recibidos ('+fmt(totalCambio)+'):</div><ul class="ci-lista">'+itemsC+'</ul>'+
-        '<div class="ci-neto">Desembolso neto: <b>'+fmt(round2(m.monto-totalCambio))+'</b></div></div>';
+      cambioHtml='<div class="cambio-info"><div class="ci-titulo">Vuelto recibido:</div><ul class="ci-lista">'+itemsC+'</ul>'+
+        '<div class="ci-desglose">'+
+          '<div class="cd-row"><span>Desembolso inicial</span><b>'+fmt(m.monto)+'</b></div>'+
+          '<div class="cd-row"><span>Vuelto registrado</span><b style="color:var(--ingreso);">'+fmt(totalCambio)+'</b></div>'+
+          '<div class="cd-row cd-real"><span>Gasto real</span><b>'+fmt(round2(m.monto-totalCambio))+'</b></div>'+
+        '</div></div>';
     }
   }
 
@@ -3211,6 +3553,19 @@ function abrirDetalleMovimiento(id){
   var btnPasarEg=document.getElementById("detallePasarEgresoBtn");
   if(btnPasarEg){
     btnPasarEg.style.display=(m.esPendiente && !esBanco) ? "" : "none";
+  }
+
+  // Botón "Registrar vuelto": en desembolsos (egreso o pendiente de caja), si aún queda por devolver
+  var btnVuelto=document.getElementById("detalleVueltoBtn");
+  if(btnVuelto){
+    var esDesembolso=!esIngreso && !esBanco; // egreso normal o pendiente de caja
+    var vueltoYa=0;
+    state.movimientos.forEach(function(x){ if(x.cambioDe && x.cambioDe.indexOf(m.id)!==-1) vueltoYa+=x.monto; });
+    var quedaPorDevolver=round2(m.monto-vueltoYa)>0.005;
+    btnVuelto.style.display=(esDesembolso && quedaPorDevolver) ? "" : "none";
+    // Solo un botón lleva el margin-right:auto (el que empuja a la izquierda)
+    btnVuelto.style.marginRight = (btnVuelto.style.display!=="none") ? "auto" : "";
+    if(btnPasarEg) btnPasarEg.style.marginRight = (btnVuelto.style.display==="none" && btnPasarEg.style.display!=="none") ? "auto" : "";
   }
 
   // Navegación entre movimientos ligados
@@ -3263,6 +3618,12 @@ document.getElementById("detalleFirmarBtn").addEventListener("click",function(){
 });
 document.getElementById("detallePasarEgresoBtn").addEventListener("click",function(){
   var id=detalleCurrentId; cerrarDetalle(); pasarPendienteAEgreso(id);
+});
+document.getElementById("detalleVueltoBtn").addEventListener("click",function(){
+  var id=detalleCurrentId;
+  var m=state.movimientos.find(function(x){ return x.id===id; }); if(!m) return;
+  cerrarDetalle();
+  if(window.__abrirVuelto) window.__abrirVuelto(m);
 });
 
 // ================================================================
@@ -3400,6 +3761,144 @@ document.getElementById("detallePasarEgresoBtn").addEventListener("click",functi
 })();
 
 // ================================================================
+// Registrar vuelto de un desembolso (crea el ingreso ligado)
+// ================================================================
+(function(){
+  var overlay=document.getElementById("vueltoOverlay");
+  if(!overlay) return;
+  var grid=document.getElementById("vueltoDenomGrid");
+  var desembolsoActual=null; // el movimiento al que se le registra el vuelto
+  var maxVuelto=0;           // cuánto queda por devolver
+  var editandoCampo=null;    // "vuelto" | "real" para no pisar lo que el usuario escribe
+
+  function construirGrid(){
+    grid.innerHTML="";
+    DENOMINACIONES.forEach(function(v){
+      var cell=document.createElement("div"); cell.className="denom-cell";
+      cell.innerHTML='<label for="vd_'+v+'">L '+v+'</label>'+
+        '<input type="text" id="vd_'+v+'" inputmode="text" autocomplete="off" placeholder="0">';
+      grid.appendChild(cell);
+    });
+    grid.addEventListener("input", onDenomInput);
+    grid.addEventListener("keydown", function(e){
+      if(!e.target.matches("input")) return;
+      if(e.key==="Enter"||e.key===" "||e.code==="Space"){
+        e.preventDefault(); resolverInputExpr(e.target); onDenomInput();
+        var inputs=Array.prototype.slice.call(grid.querySelectorAll("input"));
+        var idx=inputs.indexOf(e.target);
+        if(idx>-1 && idx<inputs.length-1){ inputs[idx+1].focus(); inputs[idx+1].select(); } else { e.target.blur(); }
+      }
+    });
+    grid.addEventListener("blur", function(e){ if(e.target.matches("input")){ resolverInputExpr(e.target); onDenomInput(); } }, true);
+  }
+
+  function leerDenoms(){
+    var d={}, total=0;
+    DENOMINACIONES.forEach(function(v){
+      var el=document.getElementById("vd_"+v);
+      var n=el?evalExpr(el.value):0; n=(n===null||isNaN(n))?0:Math.round(n); if(n<0) n=0;
+      d[v]=n; total+=n*v;
+    });
+    return { denoms:d, total:round2(total) };
+  }
+
+  // Al escribir billetes: el total de billetes manda sobre los campos monto
+  function onDenomInput(){
+    var r=leerDenoms();
+    document.getElementById("vueltoDenomTotal").textContent=fmt(r.total);
+    // Sincroniza los campos monto con el total de billetes
+    document.getElementById("vueltoMontoVuelto").value = r.total>0 ? r.total : "";
+    document.getElementById("vueltoGastoReal").value = r.total>0 ? round2(desembolsoActual.monto-r.total) : "";
+    actualizarResumen();
+  }
+
+  // Al escribir "vuelto" o "gasto real": calcula el complementario (no toca billetes)
+  function onMontoInput(campo){
+    var inpV=document.getElementById("vueltoMontoVuelto");
+    var inpR=document.getElementById("vueltoGastoReal");
+    if(campo==="vuelto"){
+      var v=parseFloat(inpV.value); if(!isNaN(v)) inpR.value=round2(desembolsoActual.monto-v);
+    } else {
+      var r=parseFloat(inpR.value); if(!isNaN(r)) inpV.value=round2(desembolsoActual.monto-r);
+    }
+    actualizarResumen();
+  }
+
+  function actualizarResumen(){
+    var inpV=document.getElementById("vueltoMontoVuelto");
+    var vuelto=parseFloat(inpV.value); if(isNaN(vuelto)) vuelto=0;
+    var real=round2(desembolsoActual.monto-vuelto);
+    document.getElementById("vueltoResumen").innerHTML=
+      '<div class="vr-row"><span class="vr-lbl">Desembolso inicial</span><span class="vr-val">'+fmt(desembolsoActual.monto)+'</span></div>'+
+      '<div class="vr-row"><span class="vr-lbl">Vuelto</span><span class="vr-val" style="color:var(--ingreso);">'+fmt(vuelto)+'</span></div>'+
+      '<div class="vr-row vr-real"><span class="vr-lbl">Gasto real</span><span class="vr-val">'+fmt(real)+'</span></div>';
+    var aviso=document.getElementById("vueltoAviso");
+    var billetes=leerDenoms().total;
+    if(vuelto<=0){ aviso.className="cambio-aviso empty"; aviso.textContent=""; }
+    else if(vuelto>maxVuelto+0.005){ aviso.className="cambio-aviso bad"; aviso.textContent="El vuelto no puede ser mayor que lo que queda por devolver ("+fmt(maxVuelto)+")."; }
+    else if(Math.abs(billetes-vuelto)>=0.005){ aviso.className="cambio-aviso bad"; aviso.textContent="Los billetes ("+fmt(billetes)+") deben sumar el vuelto ("+fmt(vuelto)+")."; }
+    else { aviso.className="cambio-aviso ok"; aviso.textContent="✓ Vuelto "+fmt(vuelto)+" · gasto real "+fmt(real); }
+  }
+
+  function abrir(mov){
+    desembolsoActual=mov;
+    var vueltoYa=0;
+    state.movimientos.forEach(function(x){ if(x.cambioDe && x.cambioDe.indexOf(mov.id)!==-1) vueltoYa+=x.monto; });
+    maxVuelto=round2(mov.monto-vueltoYa);
+    construirGrid();
+    document.getElementById("vueltoMontoVuelto").value="";
+    document.getElementById("vueltoGastoReal").value="";
+    document.getElementById("vueltoDenomTotal").textContent="L 0.00";
+    document.getElementById("vueltoError").style.display="none";
+    actualizarResumen();
+    overlay.classList.add("open");
+  }
+  function cerrar(){ overlay.classList.remove("open"); desembolsoActual=null; }
+
+  // Exponer para que el botón del detalle lo invoque
+  window.__abrirVuelto=abrir;
+
+  document.getElementById("vueltoMontoVuelto").addEventListener("input", function(){ onMontoInput("vuelto"); });
+  document.getElementById("vueltoGastoReal").addEventListener("input", function(){ onMontoInput("real"); });
+  document.getElementById("vueltoClose").addEventListener("click", cerrar);
+  overlay.addEventListener("click", function(e){ if(e.target===overlay) cerrar(); });
+
+  document.getElementById("vueltoForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    if(!desembolsoActual) return;
+    var errEl=document.getElementById("vueltoError"); errEl.style.display="none";
+    var vuelto=parseFloat(document.getElementById("vueltoMontoVuelto").value);
+    var billetes=leerDenoms();
+
+    if(isNaN(vuelto) || vuelto<=0){ errEl.textContent="Indica el vuelto o el gasto real."; errEl.style.display="block"; return; }
+    if(vuelto>maxVuelto+0.005){ errEl.textContent="El vuelto no puede ser mayor que lo que queda por devolver ("+fmt(maxVuelto)+")."; errEl.style.display="block"; return; }
+    if(Math.abs(billetes.total-vuelto)>=0.005){ errEl.textContent="El desglose de billetes debe sumar exactamente el vuelto."; errEl.style.display="block"; return; }
+
+    var submitBtn=document.getElementById("vueltoSubmit");
+    submitBtn.disabled=true; submitBtn.textContent="Registrando...";
+    var deso=desembolsoActual;
+    var resp=(usuarioActual && usuarioActual.nombre) ? usuarioActual.nombre : (deso.responsable||"Caja");
+    var ingreso={ id:uid(), fecha:new Date().toISOString(), tipo:"ingreso", responsable:resp, entregadoA:"",
+      descripcion:"Vuelto de: "+(deso.descripcion||"desembolso"), denominaciones:billetes.denoms, monto:round2(vuelto),
+      firmaEntrega:"", firmaRecibe:"", esPendiente:false, origenPendiente:"", esExterno:false, cambioDe:[deso.id] };
+
+    setSyncState("syncing","Registrando vuelto...");
+    apiGuardarMovimiento("addMovimiento",ingreso).then(function(){
+      state.movimientos.push(ingreso);
+      cerrar(); renderAll();
+      setSyncState("ok","Vuelto registrado");
+      submitBtn.disabled=false; submitBtn.textContent="Registrar vuelto";
+      // Reabrir el detalle del desembolso para que se vea el gasto real actualizado
+      abrirDetalleMovimiento(deso.id);
+    }).catch(function(err){
+      submitBtn.disabled=false; submitBtn.textContent="Registrar vuelto";
+      errEl.textContent="Error al registrar: "+err.message; errEl.style.display="block";
+      setSyncState("err");
+    });
+  });
+})();
+
+// ================================================================
 // Filtros e historial
 // ================================================================
 document.querySelectorAll(".filtro-btn").forEach(function(btn){
@@ -3496,8 +3995,212 @@ document.querySelectorAll(".tab[data-tab]").forEach(function(btn){
     if(btn.getAttribute("data-tab")==="arqueo"){ prepararArqueo(); }
     if(btn.getAttribute("data-tab")==="ordenes"){ ordPrepararNueva(); }
     if(btn.getAttribute("data-tab")==="solicitudes"){ if(typeof renderSolicitudesCajero==="function") renderSolicitudesCajero(); }
+    if(btn.getAttribute("data-tab")==="analisis"){ if(typeof renderAnalisis==="function") renderAnalisis(); }
   });
 });
+
+// ================================================================
+// Análisis / dashboard (se calcula en vivo desde state)
+// ================================================================
+var AN_COLORES={ ingreso:"#2E7CF6", egreso:"#E06B4F", neto:"#2FA37A", amber:"#E0A93B", morado:"#9B55C4" };
+
+function anCategoria(desc){
+  var d=(desc||"").toLowerCase();
+  if(/nuevo pr|préstamo|prestamo nuevo|nueva inversion|nueva inversión/.test(d) && !/ref/.test(d)) return "Préstamos nuevos";
+  if(/^ref|refinanc|reingreso/.test(d)) return "Refinanciamientos";
+  if(/combustible/.test(d)) return "Combustible";
+  if(/adelanto de salario/.test(d)) return "Adelanto salario";
+  if(/adelanto de dividendo|depresiacion|depreciaci/.test(d)) return "Dividendos/Deprec.";
+  if(/efectivo nery/.test(d)) return "Efectivo Nery";
+  if(/planilla|pago de salario|comisiones|prestaciones/.test(d)) return "Planilla/Comisiones";
+  if(/cambio/.test(d)) return "Cambios";
+  if(/recarga/.test(d)) return "Recargas";
+  if(/botellon|botellón|agua|aseo|insumo|bolsa/.test(d)) return "Insumos/Aseo";
+  return "Otros";
+}
+
+// Devuelve los movimientos de caja (ingreso/egreso) filtrados por el periodo elegido
+function anMovimientosFiltrados(){
+  var modo=(document.getElementById("anPeriodo")||{}).value||"todo";
+  var movs=state.movimientos.filter(function(m){ return m.tipo==="ingreso"||m.tipo==="egreso"; });
+  if(modo==="todo") return movs;
+  var ahora=new Date();
+  if(modo==="mes"){
+    var y=ahora.getFullYear(), mo=ahora.getMonth();
+    return movs.filter(function(m){ var d=parseFechaISO(m.fecha); return d.getFullYear()===y && d.getMonth()===mo; });
+  }
+  var dias=parseInt(modo,10);
+  var limite=new Date(ahora.getTime()-dias*86400000);
+  return movs.filter(function(m){ return parseFechaISO(m.fecha)>=limite; });
+}
+
+function renderAnalisis(){
+  if(!document.getElementById("tab-analisis")) return;
+  var movs=anMovimientosFiltrados();
+  anRenderKPIs(movs);
+  anRenderFlujoMensual(movs);
+  anRenderCategorias(movs);
+  anRenderReceptores(movs);
+  anRenderDias(movs);
+  anRenderDescuadres();
+}
+
+function anRenderKPIs(movs){
+  var cont=document.getElementById("anKpis"); if(!cont) return;
+  var saldo=state.saldoInicial;
+  state.movimientos.forEach(function(m){
+    if(m.tipo==="pendiente_banco") return;
+    saldo+=(m.tipo==="ingreso"?m.monto:-m.monto);
+  });
+  saldo=round2(saldo);
+  var ing=0,eg=0;
+  movs.forEach(function(m){ if(m.tipo==="ingreso") ing+=m.monto; else eg+=m.monto; });
+  var neto=round2(ing-eg);
+  var pend=calcEfectivoPendiente();
+  var descuadres=(state.arqueos||[]).filter(function(a){ return Math.abs(a.diferencia||0)>=0.5; }).length;
+  var minimo=state.saldoMinimo;
+  var saldoClase=(minimo!=null && saldo<minimo)?"neg":(saldo>0?"":"");
+  var kpis=[
+    { label:"Saldo actual en caja", valor:fmt(saldo), clase:saldoClase, sub:(minimo!=null?("Mínimo: "+fmt(minimo)):"") },
+    { label:"Flujo neto (periodo)", valor:(neto>=0?"+":"")+fmt(neto), clase:neto>=0?"pos":"neg", sub:fmt(ing)+" ingresos · "+fmt(eg)+" egresos" },
+    { label:"Efectivo pendiente", valor:fmt(pend), clase:pend>0?"warn":"", sub:getPendientesList().length+" registros" },
+    { label:"Arqueos con descuadre", valor:String(descuadres), clase:descuadres>0?"neg":"pos", sub:"de "+((state.arqueos||[]).length)+" arqueos" }
+  ];
+  cont.innerHTML=kpis.map(function(k){
+    return '<div class="an-kpi"><div class="k-label">'+esc(k.label)+'</div>'+
+      '<div class="k-valor '+(k.clase||"")+'">'+k.valor+'</div>'+
+      (k.sub?'<div class="k-sub">'+esc(k.sub)+'</div>':'')+'</div>';
+  }).join("");
+}
+
+function anRenderFlujoMensual(movs){
+  var cont=document.getElementById("anChartFlujo"); if(!cont) return;
+  // Agrupar por mes
+  var mapa={};
+  movs.forEach(function(m){
+    var d=parseFechaISO(m.fecha);
+    var k=d.getFullYear()+"-"+pad(d.getMonth()+1);
+    if(!mapa[k]) mapa[k]={ing:0,eg:0};
+    if(m.tipo==="ingreso") mapa[k].ing+=m.monto; else mapa[k].eg+=m.monto;
+  });
+  var keys=Object.keys(mapa).sort();
+  if(!keys.length){ cont.innerHTML='<div class="an-vacio">Sin datos en el periodo.</div>'; return; }
+  var meses=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  var datos=keys.map(function(k){
+    var p=k.split("-");
+    return { etiqueta:meses[parseInt(p[1],10)-1]+" "+p[0].slice(2), ing:mapa[k].ing, eg:mapa[k].eg, neto:round2(mapa[k].ing-mapa[k].eg) };
+  });
+  var maxVal=Math.max(1, Math.max.apply(null, datos.map(function(d){ return Math.max(d.ing,d.eg); })));
+
+  // SVG agrupado (ingreso/egreso) + línea de neto
+  var W=640, H=220, padL=48, padR=16, padT=12, padB=34;
+  var plotW=W-padL-padR, plotH=H-padT-padB;
+  var n=datos.length, grupo=plotW/n, barW=Math.min(26,(grupo-10)/2);
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Flujo por mes">';
+  // gridlines horizontales (4)
+  for(var g=0;g<=4;g++){
+    var yy=padT+plotH*(g/4);
+    var valG=maxVal*(1-g/4);
+    svg+='<line class="gridline" x1="'+padL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+yy.toFixed(1)+'"/>';
+    svg+='<text class="axis-lbl" x="'+(padL-6)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="end">'+anK(valG)+'</text>';
+  }
+  var linePts=[];
+  datos.forEach(function(d,i){
+    var cx=padL+grupo*i+grupo/2;
+    var xI=cx-barW-1, xE=cx+1;
+    var hI=plotH*(d.ing/maxVal), hE=plotH*(d.eg/maxVal);
+    svg+='<rect x="'+xI.toFixed(1)+'" y="'+(padT+plotH-hI).toFixed(1)+'" width="'+barW+'" height="'+hI.toFixed(1)+'" rx="3" fill="'+AN_COLORES.ingreso+'"><title>Ingresos '+d.etiqueta+': '+fmt(d.ing)+'</title></rect>';
+    svg+='<rect x="'+xE.toFixed(1)+'" y="'+(padT+plotH-hE).toFixed(1)+'" width="'+barW+'" height="'+hE.toFixed(1)+'" rx="3" fill="'+AN_COLORES.egreso+'"><title>Egresos '+d.etiqueta+': '+fmt(d.eg)+'</title></rect>';
+    svg+='<text class="axis-lbl" x="'+cx.toFixed(1)+'" y="'+(H-padB+16)+'" text-anchor="middle">'+d.etiqueta+'</text>';
+    linePts.push([cx, padT+plotH-plotH*((d.neto/maxVal)*0.5+0.5)]); // neto escalado al centro
+  });
+  cont.innerHTML=svg+'</svg>';
+  var leg=document.getElementById("anFlujoLegend");
+  if(leg) leg.innerHTML='<span><i style="background:'+AN_COLORES.ingreso+'"></i>Ingresos</span><span><i style="background:'+AN_COLORES.egreso+'"></i>Egresos</span>';
+}
+function anK(n){ // formato corto para ejes: 80000 -> 80k
+  if(Math.abs(n)>=1000) return Math.round(n/1000)+"k";
+  return String(Math.round(n));
+}
+
+function anBarras(contId, items, color, totalRef){
+  var cont=document.getElementById(contId); if(!cont) return;
+  if(!items.length){ cont.innerHTML='<div class="an-vacio">Sin datos en el periodo.</div>'; return; }
+  var max=Math.max.apply(null, items.map(function(i){ return i.valor; }))||1;
+  cont.innerHTML=items.map(function(it){
+    var pct=Math.max(2,(it.valor/max)*100);
+    var col=typeof color==="function"?color(it):color;
+    return '<div class="an-bar-row">'+
+      '<span class="an-bar-lbl" title="'+esc(it.label)+'">'+esc(it.label)+'</span>'+
+      '<span class="an-bar-track"><span class="an-bar-fill" style="width:'+pct.toFixed(1)+'%;background:'+col+'"></span></span>'+
+      '<span class="an-bar-val">'+fmt(it.valor)+'</span></div>';
+  }).join("");
+}
+
+function anRenderCategorias(movs){
+  var mapa={};
+  movs.forEach(function(m){
+    if(m.tipo!=="egreso") return;
+    var c=anCategoria(m.descripcion);
+    mapa[c]=(mapa[c]||0)+m.monto;
+  });
+  var items=Object.keys(mapa).map(function(k){ return {label:k, valor:round2(mapa[k])}; })
+    .sort(function(a,b){ return b.valor-a.valor; });
+  var total=items.reduce(function(s,i){ return s+i.valor; },0);
+  anBarras("anChartCategorias", items, AN_COLORES.egreso);
+  var el=document.getElementById("anCatTotal"); if(el) el.textContent="Total egresos: "+fmt(total);
+}
+
+function anRenderReceptores(movs){
+  var mapa={};
+  movs.forEach(function(m){
+    if(m.tipo!=="egreso" || !m.entregadoA) return;
+    mapa[m.entregadoA]=(mapa[m.entregadoA]||0)+m.monto;
+  });
+  var items=Object.keys(mapa).map(function(k){ return {label:k, valor:round2(mapa[k])}; })
+    .sort(function(a,b){ return b.valor-a.valor; }).slice(0,8);
+  anBarras("anChartReceptores", items, AN_COLORES.morado);
+}
+
+function anRenderDias(movs){
+  var dias=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  var mapa=[0,0,0,0,0,0,0];
+  movs.forEach(function(m){
+    if(m.tipo!=="egreso") return;
+    mapa[parseFechaISO(m.fecha).getDay()]+=m.monto;
+  });
+  var items=[1,2,3,4,5,6,0].map(function(idx){ return {label:dias[idx], valor:round2(mapa[idx])}; })
+    .filter(function(i){ return i.valor>0; });
+  anBarras("anChartDias", items, AN_COLORES.amber);
+}
+
+function anRenderDescuadres(){
+  var cont=document.getElementById("anDescuadres"); if(!cont) return;
+  var arqs=(state.arqueos||[]).filter(function(a){ return Math.abs(a.diferencia||0)>=0.5; })
+    .sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
+  var resumen=document.getElementById("anDescResumen");
+  if(!arqs.length){
+    cont.innerHTML='<div class="an-vacio">✓ Ningún arqueo con descuadre registrado.</div>';
+    if(resumen) resumen.textContent="";
+    return;
+  }
+  var totalFaltante=arqs.reduce(function(s,a){ return s+(a.diferencia<0?a.diferencia:0); },0);
+  if(resumen) resumen.textContent=arqs.length+" arqueos · faltante acumulado "+fmt(Math.abs(totalFaltante));
+  cont.innerHTML=arqs.slice(0,15).map(function(a){
+    var dif=a.diferencia||0;
+    var clase=dif<0?"neg":"pos";
+    return '<div class="an-desc-row">'+
+      '<div><div class="dr-fecha">'+fmtFechaArqueo(a.fecha)+' '+esc(a.hora||"")+'</div>'+
+        '<div class="dr-resp">'+esc(a.responsable||"—")+(a.verificador?(" · verif. "+esc(a.verificador)):"")+'</div></div>'+
+      '<div class="dr-dif '+clase+'">'+(dif>0?"+":"")+fmt(dif)+'</div></div>';
+  }).join("");
+}
+
+// Reaccionar al cambio de periodo
+(function(){
+  var sel=document.getElementById("anPeriodo");
+  if(sel) sel.addEventListener("change", renderAnalisis);
+})();
 
 // ================================================================
 // Reloj en vivo
@@ -4837,6 +5540,14 @@ document.getElementById("solicOverlay").addEventListener("click", function(e){
   if(e.target===document.getElementById("solicOverlay")) document.getElementById("solicOverlay").classList.remove("open");
 });
 
+// Registrar el Service Worker (PWA + cache offline del shell)
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(e){ console.warn("SW no registrado:", e.message); });
+  });
+}
+// Estado inicial del indicador offline
+if(typeof actualizarIndicadorOffline==="function") actualizarIndicadorOffline();
 
 })();
 </script>
