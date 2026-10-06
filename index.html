@@ -465,6 +465,25 @@
   .field-row .field{flex:1;}
   .person-row{display:flex;gap:8px;}
   .person-row select{flex:1;min-width:0;}
+  /* Combobox buscable de personas (sobre el select nativo oculto) */
+  .pcombo{flex:1;min-width:0;position:relative;}
+  .pcombo-trigger{width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);
+    font-family:var(--font-ui);font-size:14px;cursor:pointer;}
+  .pcombo-trigger.abierto{border-color:var(--blue);}
+  .pcombo-trigger .pc-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pcombo-trigger .pc-txt.placeholder{color:var(--ink-faint);}
+  .pcombo-trigger svg{width:16px;height:16px;flex-shrink:0;color:var(--ink-faint);}
+  .pcombo-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:40;background:var(--surface);
+    border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);overflow:hidden;}
+  .pcombo-panel[hidden]{display:none;}
+  .pcombo-search-wrap{padding:8px;border-bottom:1px solid var(--border);}
+  .pcombo-search{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:14px;font-family:var(--font-ui);}
+  .pcombo-lista{max-height:220px;overflow-y:auto;}
+  .pcombo-op{padding:9px 12px;cursor:pointer;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pcombo-op:hover,.pcombo-op.marcada{background:var(--blue-bg);}
+  .pcombo-op.pc-vacio-op{color:var(--ink-faint);font-style:italic;cursor:default;}
+  .pcombo-vacio{padding:12px;text-align:center;color:var(--ink-faint);font-size:12.5px;}
   .add-person-btn{flex-shrink:0;width:38px;border:1px solid var(--border);background:var(--blue-bg);
     color:var(--blue-dark);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .add-person-btn svg{width:16px;height:16px;}
@@ -2330,7 +2349,8 @@ function getPendientesList(){
       esExterno: !!m.esExterno,
       monto: m.monto,
       fecha: m.fecha,
-      entregadoA: m.entregadoA||""
+      entregadoA: m.entregadoA||"",
+      categoria: m.categoria || anCategoria(m.descripcion)
     };
   }).sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
 }
@@ -2473,19 +2493,15 @@ function renderPendientesDetalle(total){
   panel.style.display="block";
   document.getElementById("pdTotal").textContent=fmt(total);
 
-  var normales=lista.filter(function(p){ return !p.esExterno; });
-  var externos=lista.filter(function(p){ return !!p.esExterno; });
-  var totalNorm=normales.reduce(function(s,p){ return s+(p.monto||0); },0);
-  var totalExt=externos.reduce(function(s,p){ return s+(p.monto||0); },0);
-
   function filas(items){
     return items.map(function(p){
       var fd=parseFechaISO(p.fecha);
       var fechaTxt=pad(fd.getDate())+"/"+pad(fd.getMonth()+1)+"/"+fd.getFullYear();
+      var extra = p.esExterno ? '<small style="color:var(--warn);"> · externo</small>' : '';
       var receptor = p.entregadoA ? ('<span class="pd-receptor">→ '+esc(p.entregadoA)+'</span>') : '';
       return '<div class="pd-item pd-clickable" data-detalle="'+esc(String(p.id))+'" title="Ver detalle">'+
         '<span class="pd-desc">'+
-          '<span class="pd-desc-linea">'+esc(p.descripcion)+' <small>('+p.origen+')</small></span>'+
+          '<span class="pd-desc-linea">'+esc(p.descripcion)+' <small>('+p.origen+')</small>'+extra+'</span>'+
           receptor+'</span>'+
         '<span class="pd-fecha">'+fechaTxt+'</span>'+
         '<span class="pd-monto">'+fmt(p.monto)+'</span></div>';
@@ -2493,18 +2509,31 @@ function renderPendientesDetalle(total){
   }
   function grupo(titulo, items, subtotal){
     if(!items.length) return "";
-    return '<div class="pd-grupo-head"><span>'+titulo+'</span><span class="pd-grupo-total">'+fmt(subtotal)+'</span></div>'+
+    return '<div class="pd-grupo-head"><span>'+esc(titulo)+'</span><span class="pd-grupo-total">'+fmt(subtotal)+'</span></div>'+
       filas(items);
   }
 
-  // Si solo hay de un tipo, no mostrar encabezados de grupo (se ve igual que antes)
-  var html;
-  if(!externos.length){
-    html=filas(normales);
-  } else if(!normales.length){
-    html=grupo("Externos", externos, totalExt);
+  // Agrupar por categoría, respetando el orden oficial de CATEGORIAS
+  var porCat={};
+  lista.forEach(function(p){
+    var c=p.categoria||"Otros";
+    if(!porCat[c]) porCat[c]=[];
+    porCat[c].push(p);
+  });
+  var ordenCats=CATEGORIAS.filter(function(c){ return porCat[c]; });
+  // categorías no previstas (por si acaso) al final
+  Object.keys(porCat).forEach(function(c){ if(ordenCats.indexOf(c)===-1) ordenCats.push(c); });
+
+  var html="";
+  if(ordenCats.length<=1){
+    // una sola categoría: sin encabezado, se ve limpio
+    html=filas(lista);
   } else {
-    html=grupo("Normal", normales, totalNorm)+grupo("Externos", externos, totalExt);
+    html=ordenCats.map(function(c){
+      var items=porCat[c];
+      var sub=items.reduce(function(s,p){ return s+(p.monto||0); },0);
+      return grupo(c, items, sub);
+    }).join("");
   }
   document.getElementById("pdLista").innerHTML=html;
 }
@@ -2685,6 +2714,105 @@ function renderPersonasOptions(){
     c.el.innerHTML=ops;
     if(prev&&state.personas.indexOf(prev)!==-1) c.el.value=prev;
   });
+  // Asegurar que los selectores de persona sean comboboxes buscables (una sola vez)
+  inicializarComboboxesPersona();
+  // Refrescar el texto mostrado en los comboboxes de persona
+  Object.keys(_pcombos).forEach(function(k){ if(_pcombos[k]) _pcombos[k].sync(); });
+}
+var _combosInicializados=false;
+function inicializarComboboxesPersona(){
+  if(_combosInicializados) return;
+  _combosInicializados=true;
+  hacerSelectBuscablePersona("responsableSelect", "Selecciona quién entrega...");
+  hacerSelectBuscablePersona("entregadoASelect", "Sin especificar");
+  hacerSelectBuscablePersona("ordRecibeSelect", "Selecciona...");
+  hacerSelectBuscablePersona("ordAutorizadorSelect", "Selecciona...");
+  hacerSelectBuscablePersona("ordFirmarAutorizador", "Selecciona...");
+}
+
+// ================================================================
+// Combobox buscable de personas: envuelve un <select> nativo (oculto),
+// el valor sigue viviendo en el <select> para no cambiar el submit.
+// ================================================================
+var _pcombos={};
+function syncPcombo(selectId){ if(_pcombos[selectId]) _pcombos[selectId].sync(); }
+function hacerSelectBuscablePersona(selectId, placeholder){
+  var sel=document.getElementById(selectId);
+  if(!sel || _pcombos[selectId]) return; // ya convertido
+  sel.style.display="none";
+  var permiteVacio = sel.querySelector('option[value=""]') && !sel.querySelector('option[value=""][disabled]');
+
+  var cont=document.createElement("div"); cont.className="pcombo";
+  var trigger=document.createElement("button");
+  trigger.type="button"; trigger.className="pcombo-trigger";
+  trigger.innerHTML='<span class="pc-txt placeholder"></span>'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"/></svg>';
+  var panel=document.createElement("div"); panel.className="pcombo-panel"; panel.hidden=true;
+  panel.innerHTML='<div class="pcombo-search-wrap"><input type="text" class="pcombo-search" placeholder="Buscar persona..." autocomplete="off"></div><div class="pcombo-lista"></div>';
+  cont.appendChild(trigger); cont.appendChild(panel);
+  sel.parentNode.insertBefore(cont, sel.nextSibling);
+
+  var search=panel.querySelector(".pcombo-search");
+  var lista=panel.querySelector(".pcombo-lista");
+  var txt=trigger.querySelector(".pc-txt");
+  var marcado=-1, visibles=[];
+  var ph=placeholder||"Selecciona...";
+
+  function sync(){
+    var v=sel.value;
+    if(v){ txt.textContent=v; txt.classList.remove("placeholder"); }
+    else { txt.textContent=ph; txt.classList.add("placeholder"); }
+  }
+  function render(){
+    var q=search.value.trim().toLowerCase();
+    visibles=state.personas.filter(function(n){ return q==="" || n.toLowerCase().indexOf(q)!==-1; });
+    var html="";
+    if(permiteVacio){ html+='<div class="pcombo-op pc-vacio-op" data-val="">Sin especificar</div>'; }
+    if(!visibles.length && !state.personas.length){
+      html+='<div class="pcombo-vacio">Aún no hay personas. Usa el botón + para agregar.</div>';
+    } else if(!visibles.length){
+      html+='<div class="pcombo-vacio">Sin coincidencias para "'+esc(search.value.trim())+'"</div>';
+    } else {
+      html+=visibles.map(function(n,i){
+        return '<div class="pcombo-op'+(i===marcado?' marcada':'')+'" data-val="'+esc(n)+'" data-i="'+i+'">'+esc(n)+'</div>';
+      }).join("");
+    }
+    lista.innerHTML=html;
+  }
+  function abrir(){ panel.hidden=false; trigger.classList.add("abierto"); search.value=""; marcado=-1; render(); setTimeout(function(){ search.focus(); },0); }
+  function cerrar(){ panel.hidden=true; trigger.classList.remove("abierto"); }
+  function elegir(v){
+    sel.value=v;
+    sel.dispatchEvent(new Event("change",{bubbles:true}));
+    sync(); cerrar();
+  }
+
+  trigger.addEventListener("click", function(e){ e.stopPropagation(); if(panel.hidden) abrir(); else cerrar(); });
+  search.addEventListener("input", function(){ marcado=-1; render(); });
+  search.addEventListener("keydown", function(e){
+    if(e.key==="Escape"){ e.preventDefault(); cerrar(); trigger.focus(); return; }
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+      e.preventDefault(); if(!visibles.length) return;
+      marcado = e.key==="ArrowDown" ? (marcado+1>=visibles.length?0:marcado+1) : (marcado-1<0?visibles.length-1:marcado-1);
+      render();
+      var el=lista.querySelector(".pcombo-op.marcada"); if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"});
+      return;
+    }
+    if(e.key==="Enter"){
+      e.preventDefault();
+      if(marcado>=0&&visibles[marcado]) elegir(visibles[marcado]);
+      else if(visibles.length===1) elegir(visibles[0]);
+    }
+  });
+  lista.addEventListener("click", function(e){
+    var op=e.target.closest(".pcombo-op"); if(!op) return;
+    if(op.classList.contains("pc-vacio-op")){ elegir(""); return; }
+    elegir(op.getAttribute("data-val"));
+  });
+  document.addEventListener("click", function(e){ if(!panel.hidden && !cont.contains(e.target)) cerrar(); });
+
+  _pcombos[selectId]={ sync:sync };
+  sync();
 }
 
 // ================================================================
@@ -3267,10 +3395,13 @@ function openModal(){
   _categoriaTocadaManual=false;
   poblarCategoriaSelect("Otros");
   document.getElementById("categoriaAutoNota").style.display="none";
+  // Reset de personas en un nuevo movimiento
+  document.getElementById("responsableSelect").value="";
+  document.getElementById("entregadoASelect").value="";
+  syncPcombo("responsableSelect"); syncPcombo("entregadoASelect");
   actualizarUIMovimiento();
   modalOverlay.classList.add("open");
   document.getElementById("formError").style.display="none";
-  setTimeout(function(){ document.getElementById("responsableSelect").focus(); },50);
 }
 function openModalEdit(id){
   var mov=state.movimientos.find(function(m){ return m.id===id; }); if(!mov) return;
@@ -3287,6 +3418,7 @@ function openModalEdit(id){
   renderPersonasOptions();
   document.getElementById("responsableSelect").value=mov.responsable;
   document.getElementById("entregadoASelect").value=mov.entregadoA||"";
+  syncPcombo("responsableSelect"); syncPcombo("entregadoASelect");
   document.getElementById("descripcionInput").value=mov.descripcion;
   _categoriaTocadaManual=true; // al editar, respetar la categoría guardada
   poblarCategoriaSelect(mov.categoria||"Otros");
@@ -4988,6 +5120,7 @@ function ordLimpiarForm(){
   document.getElementById("ordMonto").value="";
   document.getElementById("ordRecibeSelect").value="";
   document.getElementById("ordAutorizadorSelect").value="";
+  syncPcombo("ordRecibeSelect"); syncPcombo("ordAutorizadorSelect");
   limpiarFirmaOrdenCanvas("firmaOrdenAutoriza");
   document.getElementById("ordFormError").style.display="none";
   var now=new Date();
@@ -5248,6 +5381,7 @@ document.getElementById("ordRegistrarBtn").addEventListener("click",function(){
   if(state.personas.indexOf(o.recibe)!==-1){
     document.getElementById("entregadoASelect").value=o.recibe;
   }
+  syncPcombo("entregadoASelect");
   document.getElementById("descripcionInput").value="Orden de compra: "+o.descripcion;
   // Prellenar el monto objetivo con el monto de la orden y sugerir billetes
   var moInput=document.getElementById("montoObjetivoInput");
@@ -5596,6 +5730,7 @@ function completarSolicitudEnCaja(id){
   if(s.beneficiario && state.personas.indexOf(s.beneficiario)!==-1){
     var es=document.getElementById("entregadoASelect"); if(es) es.value=s.beneficiario;
   }
+  syncPcombo("entregadoASelect");
   document.getElementById("descripcionInput").value="Solicitud: "+(s.descripcion||s.beneficiario||"efectivo");
   var moInput=document.getElementById("montoObjetivoInput");
   if(moInput){ moInput.value=s.monto; }
