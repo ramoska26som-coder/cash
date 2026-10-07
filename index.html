@@ -243,9 +243,15 @@
   .pd-grupo-head:first-child{margin-top:0;padding-top:0;border-top:none;}
   .pd-grupo-total{font-family:var(--font-mono);font-size:12.5px;}
   .pd-subcat-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
-    margin:6px 0 2px;padding-left:2px;
-    font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-faint);}
+    margin:6px 0 2px;padding:2px 0 2px 8px;
+    font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);}
+  .pd-subcat-head > span:first-child{display:inline-flex;align-items:center;gap:6px;}
   .pd-subcat-total{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-faint);}
+  .cat-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .cat-dot-lg{width:14px;height:14px;}
+  .cat-select-row{display:flex;align-items:center;gap:9px;}
+  .cat-select-row select{flex:1;min-width:0;}
+  .mov-cat-tag{display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:11px;font-weight:600;color:var(--ink-faint);}
   .inventario-panel h2{font-family:var(--font-d);font-size:18px;font-weight:600;color:var(--blue-dark);margin:0 0 4px;}
   .inventario-subtitulo{font-size:12.5px;color:var(--ink-faint);margin:0 0 16px;}
   .inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;margin-bottom:14px;}
@@ -1374,7 +1380,10 @@
 
       <div class="field">
         <label for="categoriaSelect">Categoría</label>
-        <select id="categoriaSelect"></select>
+        <div class="cat-select-row">
+          <span class="cat-dot cat-dot-lg" id="categoriaDot"></span>
+          <select id="categoriaSelect"></select>
+        </div>
         <p class="hint" id="categoriaAutoNota" style="display:none;">Sugerida por la descripción. Puedes cambiarla.</p>
       </div>
 
@@ -1661,6 +1670,13 @@ function cargarCatalogoPerfiles(){
 var DENOMS = [500,200,100,50,20,10,5,2,1];
 // Categorías oficiales (orden de aparición en selectores/filtros)
 var CATEGORIAS = ["Préstamos","Combustibles","Empleados","Efectivo Nery","Cambios de cheque","Recargas","Insumos/Agua","Dividendos","Otros"];
+// Un color por categoría (acompaña siempre al nombre escrito; paleta validada)
+var CAT_COLORES = {
+  "Préstamos":"#2E7CF6", "Combustibles":"#E0A93B", "Empleados":"#9B55C4",
+  "Efectivo Nery":"#E0533A", "Cambios de cheque":"#17A0B8", "Recargas":"#D94F8A",
+  "Insumos/Agua":"#2FA357", "Dividendos":"#B5742A", "Otros":"#6B7280"
+};
+function colorCategoria(c){ return CAT_COLORES[c] || CAT_COLORES["Otros"]; }
 
 // ---- Mapeo fila BD (snake) -> objeto frontend (camel, con denominaciones{}) ----
 function movDesdeBD(r){
@@ -2528,7 +2544,7 @@ function renderPendientesDetalle(total){
     Object.keys(porCat).forEach(function(c){ if(ordenCats.indexOf(c)===-1) ordenCats.push(c); });
     return ordenCats.map(function(c){
       var sub=porCat[c].reduce(function(s,p){ return s+(p.monto||0); },0);
-      return '<div class="pd-subcat-head"><span>'+esc(c)+'</span><span class="pd-subcat-total">'+fmt(sub)+'</span></div>'+
+      return '<div class="pd-subcat-head" style="border-left:3px solid '+colorCategoria(c)+';"><span><span class="cat-dot" style="background:'+colorCategoria(c)+';"></span>'+esc(c)+'</span><span class="pd-subcat-total">'+fmt(sub)+'</span></div>'+
         filas(porCat[c]);
     }).join("");
   }
@@ -2649,11 +2665,13 @@ function renderHistorialGroups(){
       var btnPasar = (m.esPendiente && !esBanco)
         ? '<button type="button" class="mov-pasar" data-pasar="'+m.id+'" title="Pasar de pendiente a egreso">'+ICONS.check+'</button>'
         : '';
+      var cat=m.categoria||anCategoria(m.descripcion);
+      var catTag='<span class="mov-cat-tag"><span class="cat-dot" style="background:'+colorCategoria(cat)+';"></span>'+esc(cat)+'</span>';
       return '<div class="mov-item '+claseTipo+(esPend?" pendiente":"")+'">'+
         '<div class="mov-icon mov-clickable" data-detalle="'+m.id+'">'+icono+'</div>'+
         '<div class="mov-main mov-clickable" data-detalle="'+m.id+'">'+
           '<div class="mov-desc">'+esc(m.descripcion)+badgePend+badgeCambio+'</div>'+
-          '<div class="mov-meta">'+esc(m.responsable)+' · '+fmtHora(m.fecha)+'</div>'+
+          '<div class="mov-meta">'+esc(m.responsable)+' · '+fmtHora(m.fecha)+catTag+'</div>'+
         '</div>'+
         '<div class="mov-right mov-clickable" data-detalle="'+m.id+'">'+
           '<div class="mov-amount">'+signo+fmt(m.monto)+'</div>'+
@@ -3287,10 +3305,16 @@ function nombreCajero(){ return (usuarioActual && usuarioActual.nombre) ? usuari
 
 // --- Categorías en el modal ---
 var _categoriaTocadaManual=false; // si el usuario eligió a mano, no re-sugerir
+function actualizarDotCategoria(){
+  var sel=document.getElementById("categoriaSelect");
+  var dot=document.getElementById("categoriaDot");
+  if(sel && dot) dot.style.background=colorCategoria(sel.value);
+}
 function poblarCategoriaSelect(seleccion){
   var sel=document.getElementById("categoriaSelect"); if(!sel) return;
   sel.innerHTML=CATEGORIAS.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
   if(seleccion && CATEGORIAS.indexOf(seleccion)!==-1) sel.value=seleccion;
+  actualizarDotCategoria();
 }
 function sugerirCategoriaDesdeDescripcion(){
   if(_categoriaTocadaManual) return;
@@ -3298,6 +3322,7 @@ function sugerirCategoriaDesdeDescripcion(){
   var sug=anCategoria(desc);
   var sel=document.getElementById("categoriaSelect");
   if(sel) sel.value=sug;
+  actualizarDotCategoria();
   var nota=document.getElementById("categoriaAutoNota");
   if(nota) nota.style.display = desc.trim() ? "block":"none";
 }
@@ -3389,6 +3414,7 @@ document.getElementById("descripcionInput").addEventListener("input", sugerirCat
 document.getElementById("categoriaSelect").addEventListener("change", function(){
   _categoriaTocadaManual=true;
   document.getElementById("categoriaAutoNota").style.display="none";
+  actualizarDotCategoria();
 });
 
 // ================================================================
@@ -4158,11 +4184,16 @@ document.querySelectorAll(".filtro-btn[data-filtro]").forEach(function(btn){
   });
 });
 document.getElementById("searchInput").addEventListener("input",function(e){ searchQuery=e.target.value; renderHistorialGroups(); });
-// Filtro por categoría en el historial
+// Filtro por categoría en el historial (con círculo de color en cada opción)
+var CAT_EMOJI = {
+  "Préstamos":"🔵", "Combustibles":"🟡", "Empleados":"🟣",
+  "Efectivo Nery":"🔴", "Cambios de cheque":"🟦", "Recargas":"🩷",
+  "Insumos/Agua":"🟢", "Dividendos":"🟤", "Otros":"⚪"
+};
 (function(){
   var sel=document.getElementById("filtroCategoria");
   if(sel){
-    CATEGORIAS.forEach(function(c){ var o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o); });
+    CATEGORIAS.forEach(function(c){ var o=document.createElement("option"); o.value=c; o.textContent=(CAT_EMOJI[c]||"")+" "+c; sel.appendChild(o); });
     sel.addEventListener("change", function(){ filtroCategoria=sel.value; renderHistorialGroups(); });
   }
 })();
@@ -4405,7 +4436,7 @@ function anRenderCategorias(movs){
   var items=Object.keys(mapa).map(function(k){ return {label:k, valor:round2(mapa[k])}; })
     .sort(function(a,b){ return b.valor-a.valor; });
   var total=items.reduce(function(s,i){ return s+i.valor; },0);
-  anBarras("anChartCategorias", items, AN_COLORES.egreso);
+  anBarras("anChartCategorias", items, function(it){ return colorCategoria(it.label); });
   var el=document.getElementById("anCatTotal"); if(el) el.textContent="Total egresos: "+fmt(total);
 }
 
