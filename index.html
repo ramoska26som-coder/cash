@@ -294,6 +294,29 @@
     font-size:13px;font-family:var(--font-ui);background:var(--surface-2);color:var(--ink);}
   .search-box input:focus{outline:none;border-color:var(--blue);background:var(--surface);}
 
+  /* ---- Filtros avanzados ---- */
+  .filtros-av{border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;background:var(--surface);}
+  .filtros-av-toggle{width:100%;display:flex;align-items:center;gap:8px;padding:10px 13px;
+    background:var(--surface-2);border:none;cursor:pointer;font-family:var(--font-ui);
+    font-size:13px;font-weight:600;color:var(--ink-soft);}
+  .filtros-av-toggle .fav-icon{width:15px;height:15px;flex-shrink:0;}
+  .filtros-av-toggle .fav-chevron{width:16px;height:16px;margin-left:auto;transition:transform .15s;flex-shrink:0;}
+  .filtros-av.open .fav-chevron{transform:rotate(180deg);}
+  .filtros-av-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+    padding:0 5px;border-radius:9px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;}
+  .filtros-av-body{display:none;padding:13px;border-top:1px solid var(--border);}
+  .filtros-av.open .filtros-av-body{display:block;}
+  .fav-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .fav-field{display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .fav-field label{font-size:11.5px;font-weight:600;color:var(--ink-soft);}
+  .fav-field input,.fav-field select{width:100%;border:1px solid var(--border);border-radius:8px;
+    padding:8px 10px;font-size:13px;font-family:var(--font-ui);background:var(--surface-2);color:var(--ink);}
+  .fav-field input:focus,.fav-field select:focus{outline:none;border-color:var(--blue);background:var(--surface);}
+  .fav-field input[type=number]{font-family:var(--font-mono);}
+  .fav-limpiar{margin-top:12px;width:100%;border:1px solid var(--border);background:var(--surface);
+    color:var(--ink-soft);border-radius:8px;padding:9px;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .fav-limpiar:hover{background:var(--surface-2);}
+
   /* ---- Grupo de fecha ---- */
   .fecha-group{border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
   .fecha-group summary{list-style:none;cursor:pointer;padding:13px 14px;display:flex;align-items:center;
@@ -931,8 +954,43 @@
           <input type="text" id="searchInput" placeholder="Buscar...">
         </div>
       </div>
-      <div class="historial-header" style="margin-top:-6px;">
-        <select id="filtroCategoria" class="an-periodo" style="font-size:12.5px;"><option value="">Todas las categorías</option></select>
+      <!-- Filtros avanzados (colapsables) -->
+      <div class="filtros-av" id="filtrosAv">
+        <button type="button" class="filtros-av-toggle" id="filtrosAvToggle">
+          <svg class="fav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span>Filtros</span>
+          <span class="filtros-av-count" id="filtrosAvCount" style="display:none;">0</span>
+          <svg class="fav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="filtros-av-body" id="filtrosAvBody">
+          <div class="fav-grid">
+            <div class="fav-field">
+              <label>Desde</label>
+              <input type="date" id="filtroDesde">
+            </div>
+            <div class="fav-field">
+              <label>Hasta</label>
+              <input type="date" id="filtroHasta">
+            </div>
+            <div class="fav-field">
+              <label>Monto mínimo</label>
+              <input type="number" inputmode="decimal" id="filtroMontoMin" placeholder="0" min="0" step="any">
+            </div>
+            <div class="fav-field">
+              <label>Monto máximo</label>
+              <input type="number" inputmode="decimal" id="filtroMontoMax" placeholder="Sin límite" min="0" step="any">
+            </div>
+            <div class="fav-field">
+              <label>Categoría</label>
+              <select id="filtroCategoria"><option value="">Todas las categorías</option></select>
+            </div>
+            <div class="fav-field">
+              <label>Persona</label>
+              <select id="filtroPersona"><option value="">Todas las personas</option></select>
+            </div>
+          </div>
+          <button type="button" class="fav-limpiar" id="filtrosAvLimpiar">Limpiar filtros</button>
+        </div>
       </div>
       <div id="historialGroups"></div>
     </div>
@@ -2228,6 +2286,11 @@ var state = { saldoInicial:0, movimientos:[], saldoExcel:null, saldoSistema:null
 var selectedTipo = "ingreso";
 var filtroTipo = "todos";
 var filtroCategoria = "";
+var filtroPersona = "";
+var filtroDesde = "";
+var filtroHasta = "";
+var filtroMontoMin = null;
+var filtroMontoMax = null;
 var searchQuery = "";
 var editingId = null;
 
@@ -2328,6 +2391,7 @@ function loadData(silent){
     state.categorias        = result.categorias||[];
     hideError(); showApp(); syncInputsFromState(); renderAll();
     poblarFiltroCategoria();
+    poblarFiltroPersona();
     if(result._desdeCache){
       setSyncState("err","Sin conexión — mostrando datos guardados");
     } else {
@@ -2556,6 +2620,7 @@ function renderAll(){
   renderInventario();
   renderHistorialGroups();
   renderPersonasOptions();
+  if(typeof poblarFiltroPersona==="function") poblarFiltroPersona();
   renderEtiquetas();
   if(typeof ordRenderLista==="function") ordRenderLista();
   if(typeof offGuardarCache==="function") offGuardarCache(); // mantener snapshot offline al día
@@ -2752,13 +2817,45 @@ function renderInventario(){
 // ================================================================
 // Historial agrupado por fecha
 // ================================================================
+// ¿Hay algún filtro aplicado? (cualquiera distinto de tipo/búsqueda también cuenta)
+function hayFiltrosActivos(){
+  return filtroTipo!=="todos" || searchQuery.trim()!=="" ||
+         !!filtroCategoria || !!filtroPersona || !!filtroDesde || !!filtroHasta ||
+         filtroMontoMin!=null || filtroMontoMax!=null;
+}
+// Cuenta de filtros avanzados activos (para el badge del botón "Filtros")
+function contarFiltrosAvanzados(){
+  var n=0;
+  if(filtroDesde) n++;
+  if(filtroHasta) n++;
+  if(filtroMontoMin!=null) n++;
+  if(filtroMontoMax!=null) n++;
+  if(filtroCategoria) n++;
+  if(filtroPersona) n++;
+  return n;
+}
+function actualizarBadgeFiltros(){
+  var b=document.getElementById("filtrosAvCount"); if(!b) return;
+  var n=contarFiltrosAvanzados();
+  if(n>0){ b.textContent=n; b.style.display="inline-flex"; }
+  else { b.style.display="none"; }
+}
 function renderHistorialGroups(){
   var cont=document.getElementById("historialGroups");
   var saldoMap=calcSaldosPorMov();
+  actualizarBadgeFiltros();
 
   var movs=state.movimientos.slice();
   if(filtroTipo!=="todos") movs=movs.filter(function(m){ return m.tipo===filtroTipo; });
   if(filtroCategoria){ movs=movs.filter(function(m){ return (m.categoria||anCategoria(m.descripcion))===filtroCategoria; }); }
+  // Rango de fechas (compara por YYYY-MM-DD local)
+  if(filtroDesde){ movs=movs.filter(function(m){ return fechaKey(m.fecha)>=filtroDesde; }); }
+  if(filtroHasta){ movs=movs.filter(function(m){ return fechaKey(m.fecha)<=filtroHasta; }); }
+  // Rango de montos
+  if(filtroMontoMin!=null){ movs=movs.filter(function(m){ return (m.monto||0)>=filtroMontoMin; }); }
+  if(filtroMontoMax!=null){ movs=movs.filter(function(m){ return (m.monto||0)<=filtroMontoMax; }); }
+  // Persona (entrega o recibe)
+  if(filtroPersona){ movs=movs.filter(function(m){ return m.responsable===filtroPersona || (m.entregadoA||"")===filtroPersona; }); }
   if(searchQuery.trim()){
     var q=searchQuery.trim().toLowerCase();
     movs=movs.filter(function(m){
@@ -2829,7 +2926,7 @@ function renderHistorialGroups(){
       '</div>';
     }).join("");
 
-    var hayFiltroDia=(filtroTipo!=="todos")||(searchQuery.trim()!=="");
+    var hayFiltroDia=hayFiltrosActivos();
     var abierto=(k===hoy || hayFiltroDia)?" open":"";
     return '<details class="fecha-group"'+abierto+'>'+
       '<summary>'+ICONS.chevron+
@@ -2862,7 +2959,7 @@ function renderHistorialGroups(){
     ingM=round2(ingM); egM=round2(egM);
     var diasHtml=g.dias.map(htmlDia).join("");
     // Expandir el mes actual siempre; si hay filtro o búsqueda activa, expandir todos
-    var hayFiltro=(filtroTipo!=="todos")||(searchQuery.trim()!=="");
+    var hayFiltro=hayFiltrosActivos();
     var abiertoMes=(g.mes===mesActual || hayFiltro)?" open":"";
     return '<details class="mes-group"'+abiertoMes+'>'+
       '<summary class="mes-summary">'+ICONS.chevron+
@@ -4348,6 +4445,57 @@ function poblarFiltroCategoria(){
     poblarFiltroCategoria();
     sel.addEventListener("change", function(){ filtroCategoria=sel.value; renderHistorialGroups(); });
   }
+})();
+
+// Filtro por persona (quien entrega o recibe). Se repuebla al cargar/cambiar personas.
+function poblarFiltroPersona(){
+  var sel=document.getElementById("filtroPersona");
+  if(!sel) return;
+  var prev=sel.value;
+  var personas=(state.personas||[]).slice().sort(function(a,b){ return a.localeCompare(b,"es"); });
+  sel.innerHTML='<option value="">Todas las personas</option>'+
+    personas.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join("");
+  if(prev && personas.indexOf(prev)!==-1) sel.value=prev; else { sel.value=""; filtroPersona=""; }
+}
+
+// Wiring de los filtros avanzados (rango de fechas, montos, categoría, persona)
+(function(){
+  var cont=document.getElementById("filtrosAv");
+  if(!cont) return;
+  var toggle=document.getElementById("filtrosAvToggle");
+  var desde=document.getElementById("filtroDesde");
+  var hasta=document.getElementById("filtroHasta");
+  var mmin=document.getElementById("filtroMontoMin");
+  var mmax=document.getElementById("filtroMontoMax");
+  var pers=document.getElementById("filtroPersona");
+  var limpiar=document.getElementById("filtrosAvLimpiar");
+
+  toggle.addEventListener("click", function(){ cont.classList.toggle("open"); });
+
+  desde.addEventListener("change", function(){ filtroDesde=desde.value||""; renderHistorialGroups(); });
+  hasta.addEventListener("change", function(){ filtroHasta=hasta.value||""; renderHistorialGroups(); });
+
+  function leerMonto(input){
+    var v=String(input.value).trim();
+    if(v==="") return null;
+    var n=parseFloat(v.replace(",","."));
+    return (isNaN(n)||n<0) ? null : n;
+  }
+  mmin.addEventListener("input", function(){ filtroMontoMin=leerMonto(mmin); renderHistorialGroups(); });
+  mmax.addEventListener("input", function(){ filtroMontoMax=leerMonto(mmax); renderHistorialGroups(); });
+
+  if(pers) pers.addEventListener("change", function(){ filtroPersona=pers.value; renderHistorialGroups(); });
+
+  limpiar.addEventListener("click", function(){
+    filtroDesde=""; filtroHasta=""; filtroMontoMin=null; filtroMontoMax=null;
+    filtroCategoria=""; filtroPersona="";
+    desde.value=""; hasta.value=""; mmin.value=""; mmax.value="";
+    var cat=document.getElementById("filtroCategoria"); if(cat) cat.value="";
+    if(pers) pers.value="";
+    renderHistorialGroups();
+  });
+
+  poblarFiltroPersona();
 })();
 
 // ================================================================
