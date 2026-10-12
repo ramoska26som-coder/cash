@@ -227,27 +227,38 @@
   .pd-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
   .pd-titulo{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--warn);}
   .pd-total{font-family:var(--font-mono);font-weight:700;font-size:14px;color:var(--warn);}
-  .pd-lista{display:flex;flex-direction:column;gap:3px;}
-  .pd-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;font-size:12.5px;padding:2px 0;}
-  .pd-item.pd-clickable{cursor:pointer;border-radius:6px;padding:4px 6px;margin:0 -6px;transition:background .12s;}
-  .pd-item.pd-clickable:hover{background:rgba(0,0,0,.05);}
+  .pd-lista{display:flex;flex-direction:column;gap:4px;}
+  /* ---- Grupo mayor (Normales / Externos) ---- */
+  .pd-grupo-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin:14px 0 6px;padding:7px 12px;border-radius:8px;
+    background:var(--warn);color:#fff;
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+  .pd-grupo-head:first-child{margin-top:0;}
+  .pd-grupo-total{font-family:var(--font-mono);font-size:13px;font-weight:700;}
+  .pd-grupo-cuerpo{display:flex;flex-direction:column;gap:8px;}
+  /* ---- Bloque por categoría ---- */
+  .pd-cat-bloque{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--cat-tinte);}
+  .pd-subcat-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:7px 11px;border-left:4px solid var(--ink-faint);
+    font-size:12px;font-weight:700;color:var(--ink);}
+  .pd-subcat-nombre{display:inline-flex;align-items:center;gap:7px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pd-subcat-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+    padding:0 5px;border-radius:9px;background:rgba(255,255,255,.75);
+    font-family:var(--font-mono);font-size:10.5px;font-weight:700;color:var(--ink-soft);}
+  .pd-subcat-total{font-family:var(--font-mono);font-size:12.5px;font-weight:700;flex-shrink:0;white-space:nowrap;}
+  .pd-cat-filas{display:flex;flex-direction:column;gap:2px;padding:4px;}
+  /* ---- Fila de item ---- */
+  .pd-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;font-size:12.5px;}
+  .pd-item.pd-clickable{cursor:pointer;border-radius:7px;padding:6px 9px;background:var(--surface);
+    border-left:4px solid var(--ink-faint);transition:background .12s,box-shadow .12s;}
+  .pd-item.pd-clickable:hover{background:var(--surface-2);box-shadow:0 1px 3px rgba(22,33,62,.12);}
   .pd-item .pd-desc{color:var(--ink);min-width:0;display:flex;flex-direction:column;}
   .pd-item .pd-desc small{color:var(--ink-faint);font-weight:600;}
   .pd-item .pd-desc-linea{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pd-item .pd-receptor{font-size:11px;color:var(--ink-faint);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
   .pd-item .pd-fecha{font-size:11px;color:var(--ink-faint);font-family:var(--font-mono);white-space:nowrap;flex-shrink:0;}
-  .pd-item .pd-monto{font-family:var(--font-mono);font-weight:600;color:var(--ink-soft);flex-shrink:0;white-space:nowrap;}
-  .pd-grupo-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
-    margin:8px 0 3px;padding-top:6px;border-top:1px solid #E8D9B0;
-    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--warn);}
-  .pd-grupo-head:first-child{margin-top:0;padding-top:0;border-top:none;}
-  .pd-grupo-total{font-family:var(--font-mono);font-size:12.5px;}
-  .pd-subcat-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
-    margin:6px 0 2px;padding:2px 0 2px 8px;
-    font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);}
-  .pd-subcat-head > span:first-child{display:inline-flex;align-items:center;gap:6px;}
-  .pd-subcat-total{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-faint);}
-  .cat-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .pd-item .pd-monto{font-family:var(--font-mono);font-weight:600;color:var(--ink);flex-shrink:0;white-space:nowrap;}
+  .cat-dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .cat-dot-lg{width:14px;height:14px;}
   .cat-select-row{display:flex;align-items:center;gap:9px;}
   .cat-select-row select{flex:1;min-width:0;}
@@ -560,6 +571,33 @@
     font-family:var(--font-mono);font-size:15px;background:var(--surface-2);color:var(--ink);}
   .config-field input:focus{outline:none;border-color:var(--blue);background:var(--surface);}
   .config-field .desc{font-size:11.5px;color:var(--ink-faint);margin-top:5px;}
+
+  /* ---- Administrar categorías ---- */
+  .cat-admin-lista{display:flex;flex-direction:column;gap:8px;}
+  .cat-admin-item{display:flex;align-items:center;gap:10px;border:1px solid var(--border);
+    border-radius:10px;padding:10px 12px;background:var(--surface-2);}
+  .cat-admin-dot{width:16px;height:16px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);}
+  .cat-admin-info{flex:1;min-width:0;}
+  .cat-admin-nombre{font-size:14px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .cat-admin-meta{font-size:11.5px;color:var(--ink-faint);margin-top:2px;}
+  .cat-admin-acc{display:flex;gap:6px;flex:none;}
+  .cat-admin-acc button{border:1px solid var(--border);background:var(--surface);color:var(--ink-soft);
+    border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;}
+  .cat-admin-acc button:hover{background:var(--surface-2);}
+  .cat-admin-acc button.cat-del{color:var(--danger);border-color:rgba(214,69,69,.35);}
+  .cat-admin-acc button:disabled{opacity:.4;cursor:not-allowed;}
+  .cat-admin-prot{font-size:11px;color:var(--ink-faint);font-style:italic;flex:none;}
+  .cat-color-row{display:flex;align-items:center;gap:12px;}
+  .cat-color-row input[type=color]{width:46px;height:38px;padding:0;border:1px solid var(--border);
+    border-radius:8px;background:var(--surface);cursor:pointer;flex:none;}
+  .cat-color-swatches{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
+  .cat-color-swatches button{width:24px;height:24px;border-radius:50%;border:2px solid transparent;
+    cursor:pointer;padding:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);}
+  .cat-color-swatches button.sel{border-color:var(--ink);}
+  #catKeywords{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+    font-size:14px;background:var(--surface-2);color:var(--ink);min-height:70px;resize:vertical;
+    font-family:inherit;line-height:1.4;}
+  #catKeywords:focus{outline:none;border-color:var(--blue);background:var(--surface);}
 
   /* ============ ARQUEO ============ */
   .arqueo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
@@ -1572,11 +1610,61 @@
       <div class="desc">Si el saldo actual baja de este monto, la tarjeta de saldo se pone en rojo como alerta. Déjalo vacío para desactivar.</div>
     </div>
     <div class="config-field">
+      <label>Categorías de movimientos</label>
+      <button class="btn btn-ghost" id="abrirCategoriasBtn" style="width:100%;">Administrar categorías</button>
+      <div class="desc">Agrega, edita o elimina las categorías, su color y las palabras clave que las auto-detectan.</div>
+    </div>
+    <div class="config-field">
       <label>Sesión</label>
       <button class="btn btn-ghost" id="logoutBtn" style="width:100%;">Cerrar sesión</button>
       <div class="desc">Cierra tu sesión en este dispositivo.</div>
     </div>
     <button class="btn-primary" id="configGuardarBtn">Cerrar</button>
+  </div>
+</div>
+
+<!-- Modal: administrar categorías -->
+<div class="modal-overlay" id="categoriasOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 id="categoriasTitulo">Categorías</h2>
+      <button type="button" class="modal-close" id="categoriasClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Vista lista -->
+    <div id="catVistaLista">
+      <div id="catLista" class="cat-admin-lista"></div>
+      <button class="btn btn-blue" id="catNuevaBtn" style="width:100%;margin-top:12px;">+ Nueva categoría</button>
+    </div>
+
+    <!-- Vista formulario (crear/editar) -->
+    <div id="catVistaForm" style="display:none;">
+      <form id="catForm">
+        <div class="field">
+          <label for="catNombre">Nombre</label>
+          <input type="text" id="catNombre" autocomplete="off" placeholder="Ej. Mantenimiento">
+        </div>
+        <div class="field">
+          <label for="catColor">Color</label>
+          <div class="cat-color-row">
+            <input type="color" id="catColor" value="#2E7CF6">
+            <div class="cat-color-swatches" id="catColorSwatches"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="catKeywords">Palabras clave (separadas por coma)</label>
+          <textarea id="catKeywords" placeholder="Ej. mantenimiento, reparación, taller"></textarea>
+          <p class="hint">La app auto-sugiere esta categoría cuando la descripción contiene alguna de estas palabras. Gana la palabra más específica (más larga).</p>
+        </div>
+        <div class="form-error" id="catError" style="display:none;"></div>
+        <div class="mov-actions" style="justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-ghost" id="catCancelarBtn">Cancelar</button>
+          <button type="submit" class="btn btn-blue" id="catGuardarBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -1669,14 +1757,41 @@ function cargarCatalogoPerfiles(){
 }
 var DENOMS = [500,200,100,50,20,10,5,2,1];
 // Categorías oficiales (orden de aparición en selectores/filtros)
-var CATEGORIAS = ["Préstamos","Combustibles","Empleados","Efectivo Nery","Cambios de cheque","Recargas","Insumos/Agua","Dividendos","Otros"];
-// Un color por categoría (acompaña siempre al nombre escrito; paleta validada)
-var CAT_COLORES = {
-  "Préstamos":"#2E7CF6", "Combustibles":"#E0A93B", "Empleados":"#9B55C4",
-  "Efectivo Nery":"#E0533A", "Cambios de cheque":"#17A0B8", "Recargas":"#D94F8A",
-  "Insumos/Agua":"#2FA357", "Dividendos":"#B5742A", "Otros":"#6B7280"
-};
-function colorCategoria(c){ return CAT_COLORES[c] || CAT_COLORES["Otros"]; }
+// ================================================================
+// Categorías (editables, viven en state.categorias desde la BD).
+// Fallback por si aún no cargan: las 9 originales.
+// ================================================================
+var CAT_FALLBACK = [
+  {nombre:"Préstamos",color:"#2E7CF6",palabrasClave:["nuevo prestamo","nuevo préstamo","prestamo nuevo","préstamo nuevo","nueva inversion","nueva inversión","ref -","refinanc","reingreso"],orden:1,protegida:false},
+  {nombre:"Combustibles",color:"#E0A93B",palabrasClave:["combustible"],orden:2,protegida:false},
+  {nombre:"Empleados",color:"#9B55C4",palabrasClave:["pago de combustible","pago de planilla","planilla","pago de comisiones","comisiones","adelanto de salario","pago de salario","prestaciones"],orden:3,protegida:false},
+  {nombre:"Efectivo Nery",color:"#E0533A",palabrasClave:["efectivo nery"],orden:4,protegida:false},
+  {nombre:"Cambios de cheque",color:"#17A0B8",palabrasClave:["cambio de cheque"],orden:5,protegida:false},
+  {nombre:"Recargas",color:"#D94F8A",palabrasClave:["recarga"],orden:6,protegida:false},
+  {nombre:"Insumos/Agua",color:"#2FA357",palabrasClave:["botellon","botellón","agua","aseo","insumo","bolsa","tape","chip"],orden:7,protegida:false},
+  {nombre:"Dividendos",color:"#B5742A",palabrasClave:["dividendo","depresiacion","depreciaci"],orden:8,protegida:false},
+  {nombre:"Otros",color:"#6B7280",palabrasClave:[],orden:99,protegida:true}
+];
+// Devuelve la lista de categorías vigente (de state o el fallback), ordenada
+function listaCategorias(){
+  var arr=(state && state.categorias && state.categorias.length) ? state.categorias : CAT_FALLBACK;
+  return arr.slice().sort(function(a,b){ return (a.orden||100)-(b.orden||100) || a.nombre.localeCompare(b.nombre); });
+}
+// Nombres (reemplaza la vieja constante CATEGORIAS; es una función ahora)
+function nombresCategorias(){ return listaCategorias().map(function(c){ return c.nombre; }); }
+function colorCategoria(c){
+  var found=listaCategorias().filter(function(x){ return x.nombre===c; })[0];
+  return found ? found.color : "#6B7280";
+}
+// Convierte un color hex (#RRGGBB o #RGB) a rgba() con la opacidad dada.
+function hexARgba(hex, alpha){
+  var h=String(hex||"#6B7280").replace("#","");
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var r=parseInt(h.substring(0,2),16)||0;
+  var g=parseInt(h.substring(2,4),16)||0;
+  var b=parseInt(h.substring(4,6),16)||0;
+  return "rgba("+r+","+g+","+b+","+alpha+")";
+}
 
 // ---- Mapeo fila BD (snake) -> objeto frontend (camel, con denominaciones{}) ----
 function movDesdeBD(r){
@@ -1756,6 +1871,25 @@ function ordDesdeBD(r){
     creadoEn: r.creado_en
   };
 }
+function catDesdeBD(r){
+  return {
+    id: String(r.id),
+    nombre: String(r.nombre||""),
+    color: String(r.color||"#6B7280"),
+    palabrasClave: Array.isArray(r.palabras_clave) ? r.palabras_clave : [],
+    orden: Number(r.orden)||100,
+    protegida: !!r.protegida
+  };
+}
+function catHaciaBD(c){
+  var o = {
+    nombre: String(c.nombre||"").trim(),
+    color: String(c.color||"#6B7280"),
+    palabras_clave: Array.isArray(c.palabrasClave) ? c.palabrasClave.map(function(x){ return String(x).trim(); }).filter(Boolean) : []
+  };
+  if(c.orden!=null) o.orden = Number(c.orden)||100;
+  return o;
+}
 
 // ================================================================
 // api(action, data) — router a Supabase. Devuelve Promise {ok:true,...}
@@ -1781,6 +1915,9 @@ function apiReal(action, data){
     case "addPersona":         return sbUpsert("caja_personas", { nombre: String(data.nombre||"").trim() }, "nombre");
     case "addEtiqueta":        return sbUpsert("caja_etiquetas", { texto: String(data.texto||"").trim() }, "texto");
     case "deleteEtiqueta":     return sbDeletePK("caja_etiquetas", "texto", data.texto);
+    case "addCategoria":       return sbInsert("caja_categorias", catHaciaBD(data), true, data);
+    case "updateCategoria":    return sbUpdate("caja_categorias", data.id, catHaciaBD(data));
+    case "deleteCategoria":    return sbDelete("caja_categorias", data.id);
     case "updateConfig":       return sbUpdateConfig(data);
     default: return Promise.reject(new Error("Acción desconocida: "+action));
   }
@@ -1819,7 +1956,7 @@ function offGuardarCache(){
       saldoInicial: state.saldoInicial, efectivoPendiente: state.efectivoPendiente,
       saldoExcel: state.saldoExcel, saldoSistema: state.saldoSistema, saldoMinimo: state.saldoMinimo,
       movimientos: state.movimientos, arqueos: state.arqueos, ordenes: state.ordenes,
-      personas: state.personas, etiquetas: state.etiquetas
+      personas: state.personas, etiquetas: state.etiquetas, categorias: state.categorias
     }));
   }catch(e){}
 }
@@ -1848,7 +1985,7 @@ function api(action, data){
           saldoInicial:c.saldoInicial, efectivoPendiente:c.efectivoPendiente,
           saldoExcel:c.saldoExcel, saldoSistema:c.saldoSistema, saldoMinimo:c.saldoMinimo
         }}, { movimientos:c.movimientos||[], arqueos:c.arqueos||[], ordenes:c.ordenes||[],
-          personas:c.personas||[], etiquetas:c.etiquetas||[] });
+          personas:c.personas||[], etiquetas:c.etiquetas||[], categorias:c.categorias||[] });
           return copia;
         }
       }
@@ -1959,7 +2096,8 @@ function sbGetData(){
     sb.from("caja_ordenes").select("id,fecha,descripcion,monto,recibe,autorizador,estado,movimiento_id,creado_en,tiene_firma_autoriza").order("creado_en",{ascending:false}),
     sb.from("caja_personas").select("nombre").order("nombre"),
     sb.from("caja_etiquetas").select("texto").order("texto"),
-    sb.from("caja_parametros").select("clave,valor")
+    sb.from("caja_parametros").select("clave,valor"),
+    sb.from("caja_categorias").select("id,nombre,color,palabras_clave,orden,protegida").order("orden")
   ]).then(function(res){
     res.forEach(function(r){ sbErr(r.error); });
     var cfg = {};
@@ -1977,7 +2115,8 @@ function sbGetData(){
       arqueos:(res[1].data||[]).map(arqDesdeBD),
       ordenes:(res[2].data||[]).map(ordDesdeBD),
       personas:(res[3].data||[]).map(function(x){ return x.nombre; }),
-      etiquetas:(res[4].data||[]).map(function(x){ return x.texto; })
+      etiquetas:(res[4].data||[]).map(function(x){ return x.texto; }),
+      categorias:(res[6].data||[]).map(catDesdeBD)
     };
   });
 }
@@ -2085,7 +2224,7 @@ function sbUpdateConfig(data){
 // ================================================================
 // Estado global + variables de UI (conservadas del original)
 // ================================================================
-var state = { saldoInicial:0, movimientos:[], saldoExcel:null, saldoSistema:null, saldoMinimo:null, efectivoPendiente:0, personas:[], arqueos:[], etiquetas:[], ordenes:[], solicitudes:[] };
+var state = { saldoInicial:0, movimientos:[], saldoExcel:null, saldoSistema:null, saldoMinimo:null, efectivoPendiente:0, personas:[], arqueos:[], etiquetas:[], ordenes:[], solicitudes:[], categorias:[] };
 var selectedTipo = "ingreso";
 var filtroTipo = "todos";
 var filtroCategoria = "";
@@ -2186,7 +2325,9 @@ function loadData(silent){
     state.arqueos           = result.arqueos||[];
     state.etiquetas         = result.etiquetas||[];
     state.ordenes           = result.ordenes||[];
+    state.categorias        = result.categorias||[];
     hideError(); showApp(); syncInputsFromState(); renderAll();
+    poblarFiltroCategoria();
     if(result._desdeCache){
       setSyncState("err","Sin conexión — mostrando datos guardados");
     } else {
@@ -2513,12 +2654,14 @@ function renderPendientesDetalle(total){
   panel.style.display="block";
   document.getElementById("pdTotal").textContent=fmt(total);
 
-  function filas(items){
+  // Una fila de item, teñida con el color de su categoría
+  function filas(items, color){
     return items.map(function(p){
       var fd=parseFechaISO(p.fecha);
       var fechaTxt=pad(fd.getDate())+"/"+pad(fd.getMonth()+1)+"/"+fd.getFullYear();
       var receptor = p.entregadoA ? ('<span class="pd-receptor">→ '+esc(p.entregadoA)+'</span>') : '';
-      return '<div class="pd-item pd-clickable" data-detalle="'+esc(String(p.id))+'" title="Ver detalle">'+
+      return '<div class="pd-item pd-clickable" data-detalle="'+esc(String(p.id))+'" title="Ver detalle"'+
+        ' style="border-left-color:'+color+';">'+
         '<span class="pd-desc">'+
           '<span class="pd-desc-linea">'+esc(p.descripcion)+' <small>('+p.origen+')</small></span>'+
           receptor+'</span>'+
@@ -2526,13 +2669,9 @@ function renderPendientesDetalle(total){
         '<span class="pd-monto">'+fmt(p.monto)+'</span></div>';
     }).join("");
   }
-  function grupo(titulo, items, subtotal){
-    if(!items.length) return "";
-    return '<div class="pd-grupo-head"><span>'+esc(titulo)+'</span><span class="pd-grupo-total">'+fmt(subtotal)+'</span></div>'+
-      filas(items);
-  }
 
-  // Subgrupo por categoría (segundo nivel), respetando el orden oficial de CATEGORIAS
+  // Subgrupo por categoría (segundo nivel), respetando el orden oficial de CATEGORIAS.
+  // Cada categoría es un bloque con el color aplicado al encabezado y a toda la fila.
   function subgrupoPorCategoria(items){
     var porCat={};
     items.forEach(function(p){
@@ -2540,12 +2679,20 @@ function renderPendientesDetalle(total){
       if(!porCat[c]) porCat[c]=[];
       porCat[c].push(p);
     });
-    var ordenCats=CATEGORIAS.filter(function(c){ return porCat[c]; });
+    var ordenCats=nombresCategorias().filter(function(c){ return porCat[c]; });
     Object.keys(porCat).forEach(function(c){ if(ordenCats.indexOf(c)===-1) ordenCats.push(c); });
     return ordenCats.map(function(c){
+      var col=colorCategoria(c);
       var sub=porCat[c].reduce(function(s,p){ return s+(p.monto||0); },0);
-      return '<div class="pd-subcat-head" style="border-left:3px solid '+colorCategoria(c)+';"><span><span class="cat-dot" style="background:'+colorCategoria(c)+';"></span>'+esc(c)+'</span><span class="pd-subcat-total">'+fmt(sub)+'</span></div>'+
-        filas(porCat[c]);
+      var n=porCat[c].length;
+      var headStyle='background:'+hexARgba(col,.14)+';border-left-color:'+col+';';
+      return '<div class="pd-cat-bloque" style="--cat-col:'+col+';--cat-tinte:'+hexARgba(col,.06)+';">'+
+        '<div class="pd-subcat-head" style="'+headStyle+'">'+
+          '<span class="pd-subcat-nombre"><span class="cat-dot" style="background:'+col+';"></span>'+esc(c)+
+            '<span class="pd-subcat-count">'+n+'</span></span>'+
+          '<span class="pd-subcat-total" style="color:'+col+';">'+fmt(sub)+'</span></div>'+
+        '<div class="pd-cat-filas">'+filas(porCat[c], col)+'</div>'+
+      '</div>';
     }).join("");
   }
   // Grupo mayor (Normal / Externo) con su subtotal y dentro las categorías
@@ -2553,7 +2700,7 @@ function renderPendientesDetalle(total){
     if(!items.length) return "";
     var sub=items.reduce(function(s,p){ return s+(p.monto||0); },0);
     return '<div class="pd-grupo-head"><span>'+esc(titulo)+'</span><span class="pd-grupo-total">'+fmt(sub)+'</span></div>'+
-      subgrupoPorCategoria(items);
+      '<div class="pd-grupo-cuerpo">'+subgrupoPorCategoria(items)+'</div>';
   }
 
   // Siempre dos grupos mayores: Normales y Externos; dentro, categorías
@@ -3312,8 +3459,9 @@ function actualizarDotCategoria(){
 }
 function poblarCategoriaSelect(seleccion){
   var sel=document.getElementById("categoriaSelect"); if(!sel) return;
-  sel.innerHTML=CATEGORIAS.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
-  if(seleccion && CATEGORIAS.indexOf(seleccion)!==-1) sel.value=seleccion;
+  var noms=nombresCategorias();
+  sel.innerHTML=noms.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
+  if(seleccion && noms.indexOf(seleccion)!==-1) sel.value=seleccion;
   actualizarDotCategoria();
 }
 function sugerirCategoriaDesdeDescripcion(){
@@ -4184,18 +4332,215 @@ document.querySelectorAll(".filtro-btn[data-filtro]").forEach(function(btn){
   });
 });
 document.getElementById("searchInput").addEventListener("input",function(e){ searchQuery=e.target.value; renderHistorialGroups(); });
-// Filtro por categoría en el historial (con círculo de color en cada opción)
-var CAT_EMOJI = {
-  "Préstamos":"🔵", "Combustibles":"🟡", "Empleados":"🟣",
-  "Efectivo Nery":"🔴", "Cambios de cheque":"🟦", "Recargas":"🩷",
-  "Insumos/Agua":"🟢", "Dividendos":"🟤", "Otros":"⚪"
-};
+// Filtro por categoría en el historial (se repuebla cuando cambian las categorías)
+function poblarFiltroCategoria(){
+  var sel=document.getElementById("filtroCategoria");
+  if(!sel) return;
+  var prev=sel.value;
+  sel.innerHTML='<option value="">Todas las categorías</option>'+
+    nombresCategorias().map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
+  // conservar la selección si sigue existiendo
+  if(prev && nombresCategorias().indexOf(prev)!==-1) sel.value=prev; else { sel.value=""; filtroCategoria=""; }
+}
 (function(){
   var sel=document.getElementById("filtroCategoria");
   if(sel){
-    CATEGORIAS.forEach(function(c){ var o=document.createElement("option"); o.value=c; o.textContent=(CAT_EMOJI[c]||"")+" "+c; sel.appendChild(o); });
+    poblarFiltroCategoria();
     sel.addEventListener("change", function(){ filtroCategoria=sel.value; renderHistorialGroups(); });
   }
+})();
+
+// ================================================================
+// Administrar categorías (agregar / editar / eliminar)
+// ================================================================
+(function(){
+  var overlay   = document.getElementById("categoriasOverlay");
+  if(!overlay) return;
+  var abrirBtn  = document.getElementById("abrirCategoriasBtn");
+  var cerrarBtn = document.getElementById("categoriasClose");
+  var titulo    = document.getElementById("categoriasTitulo");
+  var vistaLista= document.getElementById("catVistaLista");
+  var vistaForm = document.getElementById("catVistaForm");
+  var lista     = document.getElementById("catLista");
+  var nuevaBtn  = document.getElementById("catNuevaBtn");
+  var form      = document.getElementById("catForm");
+  var inpNombre = document.getElementById("catNombre");
+  var inpColor  = document.getElementById("catColor");
+  var swatches  = document.getElementById("catColorSwatches");
+  var inpKeys   = document.getElementById("catKeywords");
+  var errBox    = document.getElementById("catError");
+  var cancelBtn = document.getElementById("catCancelarBtn");
+
+  // Paleta validada para elegir color rápido
+  var PALETA_CAT = ["#2E7CF6","#E0A93B","#9B55C4","#E0533A","#17A0B8","#D94F8A",
+                    "#2FA357","#B5742A","#6B7280","#C43D5C","#3A7D44","#7A5AF8"];
+
+  var editandoId = null; // null = creando; id = editando
+
+  function cuentaMovs(nombre){
+    if(!state || !state.movimientos) return 0;
+    return state.movimientos.filter(function(m){
+      return (m.categoria||"Otros")===nombre;
+    }).length;
+  }
+
+  function mostrarError(msg){
+    errBox.textContent=msg; errBox.style.display=msg?"block":"none";
+  }
+
+  function pintarSwatches(sel){
+    swatches.innerHTML="";
+    PALETA_CAT.forEach(function(col){
+      var b=document.createElement("button");
+      b.type="button"; b.style.background=col; b.title=col;
+      if(col.toLowerCase()===String(sel||"").toLowerCase()) b.classList.add("sel");
+      b.addEventListener("click",function(){
+        inpColor.value=col;
+        swatches.querySelectorAll("button").forEach(function(x){ x.classList.remove("sel"); });
+        b.classList.add("sel");
+      });
+      swatches.appendChild(b);
+    });
+  }
+
+  function verLista(){
+    vistaForm.style.display="none";
+    vistaLista.style.display="block";
+    titulo.textContent="Categorías";
+    renderLista();
+  }
+
+  function renderLista(){
+    var cats=listaCategorias();
+    lista.innerHTML="";
+    cats.forEach(function(c){
+      var n=cuentaMovs(c.nombre);
+      var item=document.createElement("div"); item.className="cat-admin-item";
+
+      var dot=document.createElement("span"); dot.className="cat-admin-dot";
+      dot.style.background=c.color||"#6B7280"; item.appendChild(dot);
+
+      var info=document.createElement("div"); info.className="cat-admin-info";
+      var nom=document.createElement("div"); nom.className="cat-admin-nombre"; nom.textContent=c.nombre;
+      var meta=document.createElement("div"); meta.className="cat-admin-meta";
+      var kcount=(c.palabrasClave||[]).length;
+      meta.textContent=kcount+" palabra"+(kcount===1?"":"s")+" clave · "+n+" movimiento"+(n===1?"":"s");
+      info.appendChild(nom); info.appendChild(meta); item.appendChild(info);
+
+      var acc=document.createElement("div"); acc.className="cat-admin-acc";
+      var edit=document.createElement("button"); edit.textContent="Editar";
+      edit.addEventListener("click",function(){ verForm(c); });
+      acc.appendChild(edit);
+
+      var del=document.createElement("button"); del.className="cat-del"; del.textContent="Eliminar";
+      if(c.protegida){
+        del.disabled=true; del.title="Esta categoría no se puede eliminar.";
+      } else if(n>0){
+        del.disabled=true; del.title="No se puede eliminar: tiene "+n+" movimiento"+(n===1?"":"s")+" asignado"+(n===1?"":"s")+".";
+      } else {
+        del.addEventListener("click",function(){ eliminar(c); });
+      }
+      acc.appendChild(del);
+      item.appendChild(acc);
+
+      lista.appendChild(item);
+    });
+  }
+
+  function verForm(cat){
+    mostrarError("");
+    if(cat){
+      editandoId=cat.id||null;
+      titulo.textContent="Editar categoría";
+      inpNombre.value=cat.nombre||"";
+      inpColor.value=cat.color||"#2E7CF6";
+      inpKeys.value=(cat.palabrasClave||[]).join(", ");
+      // Si está protegida, no permitir renombrar
+      inpNombre.disabled=!!cat.protegida;
+    } else {
+      editandoId=null;
+      titulo.textContent="Nueva categoría";
+      inpNombre.value=""; inpColor.value="#2E7CF6"; inpKeys.value="";
+      inpNombre.disabled=false;
+    }
+    pintarSwatches(inpColor.value);
+    vistaLista.style.display="none";
+    vistaForm.style.display="block";
+    setTimeout(function(){ if(!inpNombre.disabled) inpNombre.focus(); }, 30);
+  }
+
+  function parseKeys(txt){
+    return String(txt||"").split(",").map(function(s){ return s.trim(); })
+      .filter(Boolean)
+      // quitar duplicados conservando orden
+      .filter(function(v,i,a){ return a.indexOf(v)===i; });
+  }
+
+  function eliminar(cat){
+    if(cat.protegida){ alert("Esta categoría no se puede eliminar."); return; }
+    var n=cuentaMovs(cat.nombre);
+    if(n>0){
+      alert("No se puede eliminar «"+cat.nombre+"»: tiene "+n+" movimiento"+(n===1?"":"s")+" asignado"+(n===1?"":"s")+".\n\nReasigna esos movimientos a otra categoría primero.");
+      return;
+    }
+    if(!navigator.onLine){ alert("Necesitas conexión para administrar categorías."); return; }
+    if(!confirm("¿Eliminar la categoría «"+cat.nombre+"»?")) return;
+    api("deleteCategoria", { id:cat.id }).then(function(){
+      return loadData(true);
+    }).then(function(){
+      verLista();
+    }).catch(function(err){
+      alert("No se pudo eliminar: "+(err && err.message ? err.message : err));
+    });
+  }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    mostrarError("");
+    var nombre=inpNombre.value.trim();
+    var color=inpColor.value||"#6B7280";
+    var keys=parseKeys(inpKeys.value);
+
+    if(!nombre){ mostrarError("El nombre es obligatorio."); return; }
+
+    // nombre único (ignorando mayúsculas), excepto la que se edita
+    var choca=listaCategorias().some(function(c){
+      return c.nombre.toLowerCase()===nombre.toLowerCase() && String(c.id)!==String(editandoId);
+    });
+    if(choca){ mostrarError("Ya existe una categoría con ese nombre."); return; }
+
+    if(!navigator.onLine){ mostrarError("Necesitas conexión para guardar categorías."); return; }
+
+    var payload;
+    if(editandoId){
+      // conservar orden/protegida de la original
+      var orig=listaCategorias().filter(function(c){ return String(c.id)===String(editandoId); })[0]||{};
+      payload={ id:editandoId, nombre:nombre, color:color, palabrasClave:keys, orden:orig.orden };
+      api("updateCategoria", payload).then(despues).catch(fallo);
+    } else {
+      // nueva: orden al final (antes de "Otros")
+      var ords=listaCategorias().filter(function(c){ return !c.protegida; }).map(function(c){ return c.orden||100; });
+      var maxOrd=ords.length?Math.max.apply(null,ords):0;
+      payload={ nombre:nombre, color:color, palabrasClave:keys, orden:maxOrd+1 };
+      api("addCategoria", payload).then(despues).catch(fallo);
+    }
+
+    function despues(){
+      return loadData(true).then(function(){ verLista(); });
+    }
+    function fallo(err){
+      mostrarError("No se pudo guardar: "+(err && err.message ? err.message : err));
+    }
+  });
+
+  function abrir(){ overlay.classList.add("open"); verLista(); }
+  function cerrar(){ overlay.classList.remove("open"); }
+
+  if(abrirBtn) abrirBtn.addEventListener("click", abrir);
+  if(cerrarBtn) cerrarBtn.addEventListener("click", cerrar);
+  if(nuevaBtn) nuevaBtn.addEventListener("click", function(){ verForm(null); });
+  if(cancelBtn) cancelBtn.addEventListener("click", verLista);
+  overlay.addEventListener("click", function(e){ if(e.target===overlay) cerrar(); });
 })();
 
 // ================================================================
@@ -4295,17 +4640,21 @@ var AN_COLORES={ ingreso:"#2E7CF6", egreso:"#E06B4F", neto:"#2FA37A", amber:"#E0
 
 // Auto-detección de categoría por descripción (DEBE coincidir con la función SQL
 // public.caja_categoria_auto para que frontend y backend clasifiquen igual).
+// Auto-detección de categoría por las palabras clave editables.
+// Gana la palabra clave MÁS LARGA que coincida (así "pago de combustible"
+// pesa más que "combustible" y cae en Empleados, no en Combustibles).
 function anCategoria(desc){
   var d=(desc||"").toLowerCase();
-  if(/pago de combustible|pago de planilla|planilla|pago de comisiones|comisiones|adelanto de salario|pago de salario|prestaciones/.test(d)) return "Empleados";
-  if(/combustible/.test(d)) return "Combustibles";
-  if(/nuevo pr|nuevo préstamo|prestamo nuevo|préstamo nuevo|nueva inversion|nueva inversión|^ref|refinanc|reingreso/.test(d)) return "Préstamos";
-  if(/efectivo nery/.test(d)) return "Efectivo Nery";
-  if(/cambio de cheque/.test(d)) return "Cambios de cheque";
-  if(/recarga/.test(d)) return "Recargas";
-  if(/botellon|botellón|agua|aseo|insumo|bolsa|tape|chip/.test(d)) return "Insumos/Agua";
-  if(/dividendo|depresiacion|depreciaci/.test(d)) return "Dividendos";
-  return "Otros";
+  if(!d) return "Otros";
+  var mejor=null, mejorLen=-1;
+  listaCategorias().forEach(function(cat){
+    (cat.palabrasClave||[]).forEach(function(kw){
+      var k=String(kw||"").toLowerCase().trim();
+      if(!k) return;
+      if(d.indexOf(k)!==-1 && k.length>mejorLen){ mejor=cat.nombre; mejorLen=k.length; }
+    });
+  });
+  return mejor || "Otros";
 }
 
 // Devuelve los movimientos de caja (ingreso/egreso) filtrados por el periodo elegido
