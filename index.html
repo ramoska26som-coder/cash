@@ -2162,10 +2162,29 @@ window.addEventListener("offline", actualizarIndicadorOffline);
 
 function sbErr(error){ if(error) throw new Error(error.message || "Error en el servidor"); }
 
+// Trae TODAS las filas de una consulta, paginando en bloques de 1000.
+// Supabase/PostgREST corta en 1000 por defecto; sin esto, con >1000
+// movimientos se perdían los más antiguos (los ingresos iniciales),
+// dejando el inventario de billetes en negativo falso.
+function sbTraerTodo(construirConsulta){
+  var PAG = 1000;
+  var acum = [];
+  function pagina(desde){
+    return construirConsulta().range(desde, desde+PAG-1).then(function(r){
+      sbErr(r.error);
+      var filas = r.data || [];
+      acum = acum.concat(filas);
+      if(filas.length === PAG) return pagina(desde+PAG); // puede haber más
+      return acum;
+    });
+  }
+  return pagina(0);
+}
+
 // ---- getData: lee todo lo que el cajero necesita ----
 function sbGetData(){
   return Promise.all([
-    sb.from("caja_movimientos").select("id,fecha,tipo,responsable,entregado_a,descripcion,monto,d500,d200,d100,d50,d20,d10,d5,d2,d1,es_pendiente,origen_pendiente,es_externo,cambio_de,categoria,tiene_firma_entrega,tiene_firma_recibe").order("fecha",{ascending:false}),
+    sbTraerTodo(function(){ return sb.from("caja_movimientos").select("id,fecha,tipo,responsable,entregado_a,descripcion,monto,d500,d200,d100,d50,d20,d10,d5,d2,d1,es_pendiente,origen_pendiente,es_externo,cambio_de,categoria,tiene_firma_entrega,tiene_firma_recibe").order("fecha",{ascending:false}); }),
     sb.from("caja_arqueos").select("id,fecha,hora,responsable,verificador,total_contado,efectivo_pendiente,teorico,sistema,excel,diferencia,notas,denominaciones,pendientes_lista,creado_en,tiene_firma_responsable,tiene_firma_verificador").order("creado_en",{ascending:false}),
     sb.from("caja_ordenes").select("id,fecha,descripcion,monto,recibe,autorizador,estado,movimiento_id,creado_en,tiene_firma_autoriza").order("creado_en",{ascending:false}),
     sb.from("caja_personas").select("nombre").order("nombre"),
@@ -2173,7 +2192,8 @@ function sbGetData(){
     sb.from("caja_parametros").select("clave,valor"),
     sb.from("caja_categorias").select("id,nombre,color,palabras_clave,orden,protegida").order("orden")
   ]).then(function(res){
-    res.forEach(function(r){ sbErr(r.error); });
+    // res[0] ya es un array de filas (sbTraerTodo); el resto son respuestas {data,error}
+    res.slice(1).forEach(function(r){ sbErr(r.error); });
     var cfg = {};
     (res[5].data||[]).forEach(function(p){ cfg[p.clave] = p.valor; });
     return {
@@ -2185,7 +2205,7 @@ function sbGetData(){
         saldoSistema:(cfg.saldoSistema==null)?null:Number(cfg.saldoSistema),
         saldoMinimo:(cfg.saldoMinimo==null)?null:Number(cfg.saldoMinimo)
       },
-      movimientos:(res[0].data||[]).map(movDesdeBD),
+      movimientos:(res[0]||[]).map(movDesdeBD),
       arqueos:(res[1].data||[]).map(arqDesdeBD),
       ordenes:(res[2].data||[]).map(ordDesdeBD),
       personas:(res[3].data||[]).map(function(x){ return x.nombre; }),
