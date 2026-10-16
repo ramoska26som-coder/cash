@@ -279,6 +279,16 @@
   .inv-total-row{display:flex;align-items:center;justify-content:space-between;background:var(--blue-dark);color:#fff;border-radius:9px;padding:11px 14px;}
   .inv-total-label{font-size:13px;font-weight:600;opacity:.85;}
   .inv-total-valor{font-family:var(--font-mono);font-size:20px;font-weight:700;}
+  /* Tarjeta con conteo negativo (dato inconsistente) */
+  .inv-card.negativo{background:var(--danger-bg);border-color:#F0C9C2;}
+  .inv-card.negativo::before{background:var(--danger);opacity:1;}
+  .inv-card.negativo .inv-cantidad,.inv-card.negativo .inv-subtotal{color:var(--danger);}
+  /* Aviso de negativos */
+  .inv-aviso-neg{display:flex;gap:10px;align-items:flex-start;background:var(--danger-bg);
+    border:1px solid #F0C9C2;border-radius:10px;padding:11px 13px;margin-bottom:14px;
+    font-size:12.5px;line-height:1.4;color:#7A2A1C;}
+  .inv-aviso-neg svg{width:18px;height:18px;color:var(--danger);flex-shrink:0;margin-top:1px;}
+  .inv-aviso-neg b{color:var(--danger);}
 
   /* ---- Panel historial ---- */
   .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
@@ -932,6 +942,12 @@
     <div class="inventario-panel">
       <h2>Inventario en caja</h2>
       <p class="inventario-subtitulo">Conteo acumulado de billetes según los movimientos</p>
+      <div class="inv-aviso-neg" id="invAvisoNeg" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div>
+          <b>Hay denominaciones en negativo.</b> Esto suele pasar cuando faltan registrar ingresos de efectivo, o cuando se abrió la app sin conexión y quedó mostrando datos guardados. Toca <b>↻ Recargar datos</b> con buena señal para traer la información real.
+        </div>
+      </div>
       <div class="inv-grid" id="invGrid"></div>
       <div class="inv-total-row">
         <span class="inv-total-label">Total en billetes</span>
@@ -2293,6 +2309,9 @@ var filtroMontoMin = null;
 var filtroMontoMax = null;
 var searchQuery = "";
 var editingId = null;
+// true solo cuando esta sesión ya cargó datos reales del servidor (no de caché).
+// Controla si renderAll() puede regrabar el snapshot offline.
+var datosDelServidor = false;
 
 // ---- Caché de firmas bajo demanda (igual interfaz que el original) ----
 var _firmasCache = {};
@@ -2393,8 +2412,10 @@ function loadData(silent){
     poblarFiltroCategoria();
     poblarFiltroPersona();
     if(result._desdeCache){
+      datosDelServidor=false; // vino de caché: no habilitar regrabado
       setSyncState("err","Sin conexión — mostrando datos guardados");
     } else {
+      datosDelServidor=true;  // carga real confirmada: ya es seguro regrabar
       offGuardarCache(); // snapshot fresco para abrir sin red
       if(silent) setSyncState("ok","Datos actualizados");
     }
@@ -2623,7 +2644,11 @@ function renderAll(){
   if(typeof poblarFiltroPersona==="function") poblarFiltroPersona();
   renderEtiquetas();
   if(typeof ordRenderLista==="function") ordRenderLista();
-  if(typeof offGuardarCache==="function") offGuardarCache(); // mantener snapshot offline al día
+  // Guardar snapshot offline SOLO si en esta sesión ya hubo una carga
+  // confirmada del servidor. Así, si la app abrió mostrando la caché
+  // (sin red) o quedó con un estado parcial, nunca se sobrescribe el
+  // snapshot bueno con datos incompletos → evita inventario negativo falso.
+  if(datosDelServidor && typeof offGuardarCache==="function") offGuardarCache();
 }
 
 // ================================================================
@@ -2800,11 +2825,12 @@ function renderStatusTarjeta(id, r, sujeto, nombre){
 }
 
 function renderInventario(){
-  var c=calcInventario(),total=0;
+  var c=calcInventario(),total=0,hayNegativo=false;
   var html=DENOMINACIONES.map(function(v){
     var cant=c[v],sub=cant*v; total=round2(total+sub);
     var tiene=cant>0;
-    return '<div class="inv-card'+(tiene?" tiene":"")+'">'+
+    var neg=cant<0; if(neg) hayNegativo=true;
+    return '<div class="inv-card'+(tiene?" tiene":"")+(neg?" negativo":"")+'">'+
       '<div class="inv-denom">L '+v+'</div>'+
       '<div class="inv-cantidad">'+cant+'</div>'+
       '<div class="inv-unidad">billete'+(cant!==1?"s":"")+'</div>'+
@@ -2812,6 +2838,8 @@ function renderInventario(){
   }).join("");
   document.getElementById("invGrid").innerHTML=html;
   document.getElementById("invTotal").textContent=fmt(total);
+  var aviso=document.getElementById("invAvisoNeg");
+  if(aviso) aviso.style.display = hayNegativo ? "flex" : "none";
 }
 
 // ================================================================
